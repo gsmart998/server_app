@@ -1,2 +1,4 @@
 register.json
 sample.txt
+.venv
+test.py

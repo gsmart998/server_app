@@ -1,7 +1,11 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import sqlite3
+import hashlib
 from sqlite3 import Error
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
+from json.decoder import JSONDecodeError
 
 
 host = "localhost"
@@ -45,7 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(20) NOT NULL,
   email VARCHAR(50) NOT NULL UNIQUE,
   login VARCHAR(20) NOT NULL UNIQUE,
-  password VARCHAR(20) NOT NULL
+  password VARCHAR(100) NOT NULL
 );
 """
 execute_query(connection, create_users_table)
@@ -71,22 +75,31 @@ VALUES
   (?, ?, ?, ?);
 """
 
+
+# Шаблон json файла формы регистрации
+register_schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "login": {"type": "string"},
+        "password": {"type": "string"},
+        "email": {"type": "string"},
+    },
+    "required": ["name", "login", "password", "email"],
+    "additionalProperties": False
+}
+
+
 # Функция регистрации пользователя
-
-
 def register_user(connection, query, data):
     cursor = connection.cursor()
     try:
         cursor.execute(query, data)
         connection.commit()
         print("Query executed successfully")
-
-        # message = b"Query executed successfully"
-        # response = 200
     except Error as e:
         print(f"The error '{e}' occurred")
-        # message = f"The error '{e}' occurred"
-        # response = 400
+        return Error
 
 
 class ServerHTTP(BaseHTTPRequestHandler):
@@ -105,22 +118,38 @@ class ServerHTTP(BaseHTTPRequestHandler):
 
         # Получение тела запроса
         body = self.rfile.read(content_length)
-        body = json.loads(body)  # Конвертируем json в словарь
+        try:
+            body = json.loads(body)  # Конвертируем json в словарь
+        except JSONDecodeError:
+            print("Ошибка чтения json файла!")
 
         # ------------------------------------
 
         # Обработка регистрации
         if self.path == "/register":
-
-            # Проверка ключей в запросе
-            if body.get("name", "login") is not None and body.get("password", "email") is not None:
+            try:
+                validate(body, register_schema)
                 print("Recived POST request /register")
-                data = (body["name"], body["email"],
-                        body["login"], body["password"])
-                register_user(connection, create_user, data)
 
-            else:
-                print("Error, incorrect json file!")
+                # Хешируем пароль пользователя
+                user_pw = hashlib.sha256(
+                    bytes(body["password"], "UTF-8")).hexdigest()
+                user_data = (body["name"], body["email"],
+                             body["login"], user_pw)
+
+                if register_user(connection, create_user, user_data) == None:
+                    response = 200
+                    message = f"User {body['login']} was created!"
+
+                else:
+                    response = 400
+                    # ??? Как вывести ТЕКСТ ошибки?
+                    message = f"Error '{sqlite3.Error}' occured"
+
+            except ValidationError:
+                print("Json is not valid!")
+                response = 400
+                message = "Json is not valid!"
 
         # Обработка авторизации
         if self.path == "/login":
@@ -133,11 +162,11 @@ class ServerHTTP(BaseHTTPRequestHandler):
          # ------------------------------------
 
         # Формирование ответа
-        self.send_response(200)
+        self.send_response(response)
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-        self.wfile.write(b"Message")
+        self.wfile.write(bytes(message, "UTF-8"))
 
         """if body == b"add":
             print("Add a new user")
