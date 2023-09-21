@@ -91,31 +91,31 @@ register_schema = {
 }
 
 
-# Функция валидации email адреса
-def check_email(email):
-    try:
-        # validate email
-        validate_email(email)
-        print("Email is valid")
-    except EmailNotValidError as e:
-        # email is not valid, exception message is human-readable
-        print(str(e))
-        return e
+# Формирование ответа на запрос
+def respond_json(self, code, message):
+    if code == 200:
+        text = {"status": "ok"}
+        json_message = json.dumps(text, indent=4)
+
+    elif code == 400:
+        text = {"status": "failure", "errors": message}
+        json_message = json.dumps(text, indent=4)
+
+    self.send_response(code)
+    self.send_header("Content-Type", "application/json")
+    self.end_headers()
+    self.wfile.write(json_message.encode())
 
 
 # Функция регистрации пользователя
 def register_user(connection, query, data):
     cursor = connection.cursor()
-    try:
-        cursor.execute(query, data)
-        connection.commit()
-        print("Query executed successfully")
-    except Error as e:
-        print(f"The error '{e}' occurred")
-        return Error
+    cursor.execute(query, data)
+    connection.commit()
+    print("Query executed successfully")
 
 
-class ServerHTTP(BaseHTTPRequestHandler):
+class Server_HTTP(BaseHTTPRequestHandler):
     def do_GET(self):
         print("Get request recived!")
         self.send_response(200)
@@ -126,27 +126,22 @@ class ServerHTTP(BaseHTTPRequestHandler):
             bytes("<html><body><h1>Hello World!</h1></body></html>", "utf-8"))
 
     def do_POST(self):
-        # Получение длины тела запроса
-        content_length = int(self.headers["Content-Length"])
-
-        # Получение тела запроса
-        body = self.rfile.read(content_length)
-        try:
-            body = json.loads(body)  # Конвертируем json в словарь
-        except JSONDecodeError:
-            print("Ошибка чтения json файла!")
-
-        # ------------------------------------
-
         # Обработка регистрации
         if self.path == "/register":
             try:
+                # Получение длины тела запроса
+                content_length = int(self.headers["Content-Length"])
+
+                # Получение тела запроса
+                body = self.rfile.read(content_length)
+                body = json.loads(body)  # Конвертируем json в словарь
+
+                # Валидация полей JSON файла
                 validate(body, register_schema)
                 print("Recived POST request /register")
 
                 # Проверяем email пользователя
-                if check_email(body["email"]) != None:
-                    print("Email error!")  # Нужна расшифровка!
+                validate_email(body["email"])
 
                 # Хешируем пароль пользователя
                 user_pw = hashlib.sha256(
@@ -154,19 +149,33 @@ class ServerHTTP(BaseHTTPRequestHandler):
                 user_data = (body["name"], body["email"],
                              body["login"], user_pw)
 
-                if register_user(connection, create_user, user_data) == None:
-                    response = 200
-                    message = f"User {body['login']} was created!"
+                # Заносим данные в БД
+                register_user(connection, create_user, user_data)
 
-                else:
-                    response = 400
-                    # ??? Как вывести ТЕКСТ ошибки?
-                    message = str(Error)
+                # Если нет ошибок отправляем что все ок
+                respond_json(self, 200, "User created!")
+                print(f"User '{body['login']}' created")
 
-            except ValidationError:
-                print("Json is not valid!")
-                response = 400
-                message = "Json is not valid!"
+            # Отрабатываем ошибки
+            # JSON parse error
+            except JSONDecodeError:
+                respond_json(self, 400, "Ошибка чтения json файла!")
+                print("Ошибка чтения json файла!")
+
+            # JSON format error
+            except ValidationError as e:
+                respond_json(self, 400, f"Json is not valid! Error'{e}'")
+                print(f"Json is not valid! Error'{e}'")
+
+            # Email validation error
+            except EmailNotValidError as e:
+                respond_json(self, 400, f"Error '{e}' occurred")
+                print(f"Error '{e}' occurred")
+
+            # SQL error
+            except Error as e:
+                respond_json(self, 400, f"The error '{e}' occurred")
+                print(f"SQL query ERROR. The error '{e}' occurred")
 
         # Обработка авторизации
         if self.path == "/login":
@@ -176,28 +185,8 @@ class ServerHTTP(BaseHTTPRequestHandler):
         if self.path == "/logout":
             print("Получен запрос /logout")
 
-         # ------------------------------------
 
-        # Формирование ответа
-        self.send_response(response)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-        self.wfile.write(bytes(message, "UTF-8"))
-
-        """if body == b"add":
-            print("Add a new user")
-            print(self.path)  # self.path - path in URL "/add"
-        else:
-            """
-        # response = BytesIO()
-        # response.write(b"This is POST request. ")
-        # response.write(b"Received: ")
-        # response.write(body)
-
-
-server = HTTPServer((host, port), ServerHTTP)
-
+server = HTTPServer((host, port), Server_HTTP)
 print("Server now running...")
 server.serve_forever()
 server.shutdown()
