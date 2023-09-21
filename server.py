@@ -6,6 +6,7 @@ from sqlite3 import Error
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from json.decoder import JSONDecodeError
+from email_validator import validate_email, EmailNotValidError
 
 
 host = "localhost"
@@ -90,6 +91,18 @@ register_schema = {
 }
 
 
+# Функция валидации email адреса
+def check_email(email):
+    try:
+        # validate email
+        validate_email(email)
+        print("Email is valid")
+    except EmailNotValidError as e:
+        # email is not valid, exception message is human-readable
+        print(str(e))
+        return e
+
+
 # Функция регистрации пользователя
 def register_user(connection, query, data):
     cursor = connection.cursor()
@@ -131,6 +144,10 @@ class ServerHTTP(BaseHTTPRequestHandler):
                 validate(body, register_schema)
                 print("Recived POST request /register")
 
+                # Проверяем email пользователя
+                if check_email(body["email"]) != None:
+                    print("Email error!")  # Нужна расшифровка!
+
                 # Хешируем пароль пользователя
                 user_pw = hashlib.sha256(
                     bytes(body["password"], "UTF-8")).hexdigest()
@@ -144,7 +161,7 @@ class ServerHTTP(BaseHTTPRequestHandler):
                 else:
                     response = 400
                     # ??? Как вывести ТЕКСТ ошибки?
-                    message = f"Error '{sqlite3.Error}' occured"
+                    message = str(Error)
 
             except ValidationError:
                 print("Json is not valid!")
