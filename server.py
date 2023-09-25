@@ -7,14 +7,20 @@ from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from json.decoder import JSONDecodeError
 from email_validator import validate_email, EmailNotValidError
+import logging as log
+
+log.basicConfig(filename='app.log', filemode='a',
+                format='%(levelname)s - %(asctime)s - %(message)s', level=log.INFO)
+log.basicConfig(filename='app.log', filemode='a',
+                format='%(levelname)s - %(asctime)s - %(message)s', level=log.ERROR)
 
 
 host = "localhost"
-port = 8000
+port = 8001
 
 
 # Подключение к БД
-path = "app_sqlite.db"
+path = "sqlite_base.db"
 
 
 # Создание подключение к БД
@@ -22,10 +28,9 @@ def create_connection(path):
     connection = None
     try:
         connection = sqlite3.connect(path)
-        print("Connection to SQLite DB successful")
+        log.info("Connection to SQLite DB successful")
     except Error as e:
-        print(f"The error '{e}' occurred")
-
+        log.error(f"The error '{e}' occurred")
     return connection
 
 
@@ -38,9 +43,9 @@ def execute_query(connection, query):
     try:
         cursor.execute(query)
         connection.commit()
-        print("Query executed successfully")
+        log.info("Query executed successfully")
     except Error as e:
-        print(f"The error '{e}' occurred")
+        log.error(f"The error '{e}' occurred")
 
 
 # Запрос на создание таблицы users
@@ -90,6 +95,17 @@ register_schema = {
     "additionalProperties": False
 }
 
+# Шаблон json файла формы авторизации
+login_schema = {
+    "type": "object",
+    "properties": {
+        "login": {"type": "string"},
+        "password": {"type": "string"}
+    },
+    "required": ["login", "password"],
+    "additionalProperties": False
+}
+
 
 # Формирование ответа на запрос
 def respond_json(self, code, message):
@@ -105,6 +121,7 @@ def respond_json(self, code, message):
     self.send_header("Content-Type", "application/json")
     self.end_headers()
     self.wfile.write(json_message.encode())
+    log.info("Reply sent")
 
 
 # Функция регистрации пользователя
@@ -112,12 +129,23 @@ def register_user(connection, query, data):
     cursor = connection.cursor()
     cursor.execute(query, data)
     connection.commit()
-    print("Query executed successfully")
+    log.info("Register query executed successfully")
+
+
+# Функция авторизации пользователя
+def login_user(connection, user_data):
+    cursor = connection.cursor()
+    cursor.execute(
+        "SELECT * FROM users WHERE login = ? AND password = ?", user_data)
+    if cursor.fetchone() != None:
+        log.info("Requested user exist")
+    else:
+        log.info("Requested user does not exist")
 
 
 class Server_HTTP(BaseHTTPRequestHandler):
     def do_GET(self):
-        print("Get request recived!")
+        log.info("GET request recived!")
         self.send_response(200)
         self.send_header("content-type", "text/html")
         self.end_headers()
@@ -126,6 +154,7 @@ class Server_HTTP(BaseHTTPRequestHandler):
             bytes("<html><body><h1>Hello World!</h1></body></html>", "utf-8"))
 
     def do_POST(self):
+        log.info("POST request recived")
         # Обработка регистрации
         if self.path == "/register":
             try:
@@ -138,7 +167,6 @@ class Server_HTTP(BaseHTTPRequestHandler):
 
                 # Валидация полей JSON файла
                 validate(body, register_schema)
-                print("Recived POST request /register")
 
                 # Проверяем email пользователя
                 validate_email(body["email"])
@@ -154,39 +182,62 @@ class Server_HTTP(BaseHTTPRequestHandler):
 
                 # Если нет ошибок отправляем что все ок
                 respond_json(self, 200, "User created!")
-                print(f"User '{body['login']}' created")
+                log.info(f"User '{body['login']}' created")
 
             # Отрабатываем ошибки
             # JSON parse error
             except JSONDecodeError:
                 respond_json(self, 400, "Ошибка чтения json файла!")
-                print("Ошибка чтения json файла!")
+                log.error("Ошибка чтения json файла!")
 
             # JSON format error
             except ValidationError as e:
                 respond_json(self, 400, f"Json is not valid! Error'{e}'")
-                print(f"Json is not valid! Error'{e}'")
+                log.error(f"Json is not valid! Error'{e}'")
 
             # Email validation error
             except EmailNotValidError as e:
                 respond_json(self, 400, f"Error '{e}' occurred")
-                print(f"Error '{e}' occurred")
+                log.error(f"Error '{e}' occurred")
 
             # SQL error
             except Error as e:
                 respond_json(self, 400, f"The error '{e}' occurred")
-                print(f"SQL query ERROR. The error '{e}' occurred")
+                log.error(f"SQL query ERROR. The error '{e}' occurred")
 
+        # =====================
         # Обработка авторизации
         if self.path == "/login":
-            print("Получен запрос /login")
+
+            # Получение длины тела запроса
+            content_length = int(self.headers["Content-Length"])
+
+            # Получение тела запроса
+            body = self.rfile.read(content_length)
+            body = json.loads(body)  # Конвертируем json в словарь
+
+            # Валидация полей JSON файла
+            validate(body, login_schema)
+
+            # Хешируем пароль пользователя
+            user_pw = hashlib.sha256(
+                bytes(body["password"], "UTF-8")).hexdigest()
+            user_data = (body["login"], user_pw)
+
+            login_user(connection, user_data)
 
         # Обработка выхода
         if self.path == "/logout":
-            print("Получен запрос /logout")
+            pass
+            # print("Получен запрос /logout")
 
 
 server = HTTPServer((host, port), Server_HTTP)
+log.info("Server now running...")
 print("Server now running...")
-server.serve_forever()
-server.shutdown()
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    server.shutdown()
+    print("Server shutdown")
+    log.info("Server shutdown")

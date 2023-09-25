@@ -1,0 +1,13 @@
+attrs==23.1.0
+distlib==0.3.7
+dnspython==2.4.2
+docopt==0.6.2
+email-validator==2.0.0.post2
+filelock==3.12.4
+httpserver==1.1.0
+idna==3.4
+jsonschema==4.19.1
+jsonschema-specifications==2023.7.1
+platformdirs==3.10.0
+referencing==0.30.2
+rpds-py==0.10.3
