@@ -1,4 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.cookies import SimpleCookie
+import http
 import json
 import sqlite3
 import hashlib
@@ -8,6 +10,8 @@ from jsonschema.exceptions import ValidationError
 from json.decoder import JSONDecodeError
 from email_validator import validate_email, EmailNotValidError
 import logging as log
+import uuid
+from datetime import datetime, timedelta
 
 log.basicConfig(filename='app.log', filemode='a',
                 format='%(levelname)s - %(asctime)s - %(message)s', level=log.INFO)
@@ -73,6 +77,27 @@ CREATE TABLE IF NOT EXISTS tasks(
 execute_query(connection, create_tasks_table)
 
 
+# Запрос на создание таблицы sessions
+create_sessions_table = """
+CREATE TABLE IF NOT EXISTS sessions(
+  uid VARCHAR(50) PRIMARY KEY,
+  expire DATETIME NOT NULL,
+  user_id INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users (id)
+);
+"""
+execute_query(connection, create_sessions_table)
+
+
+# Запрос на создание сессии
+create_session = """
+INSERT INTO
+  sessions (uid, expire, user_id)
+VALUES
+  (?, ?, ?);
+"""
+
+
 # Запрос на создание пользователя
 create_user = """
 INSERT INTO
@@ -108,7 +133,7 @@ login_schema = {
 
 
 # Формирование ответа на запрос
-def respond_json(self, code, message):
+def respond_json(self, code: int, message: str, cookie: str = None):
     if code == 200:
         text = {"status": "ok"}
         json_message = json.dumps(text, indent=4)
@@ -119,6 +144,7 @@ def respond_json(self, code, message):
 
     self.send_response(code)
     self.send_header("Content-Type", "application/json")
+    set_cookie(self, cookie)
     self.end_headers()
     self.wfile.write(json_message.encode())
     log.info("Reply sent")
@@ -129,27 +155,65 @@ def register_user(connection, query, data):
     cursor = connection.cursor()
     cursor.execute(query, data)
     connection.commit()
-    log.info("Register query executed successfully")
+    log.info("Register query 'register_user' executed successfully")
+
+
+# Функция регистрации сессии
+def register_session(connection, query, data):
+    cursor = connection.cursor()
+    cursor.execute(query, data)
+    connection.commit()
+    log.info("Register query 'register_session' executed successfully")
 
 
 # Функция авторизации пользователя
 def login_user(connection, user_data):
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT * FROM users WHERE login = ? AND password = ?", user_data)
-    if cursor.fetchone() != None:
+        "SELECT id FROM users WHERE login = ? AND password = ?", user_data)
+    user_id = cursor.fetchone()
+    if user_id != None:
         log.info("Requested user exist")
+        # Генерируем уникальный id сессии
+        uid = str(uuid.uuid4())
+        # Время жизни сессии 30 минут
+        expire = str(datetime.now() + timedelta(minutes=30))
+        data = (uid, expire, user_id[0])
+        register_session(connection, create_session, data)
+        log.info("Registered new session")
+        return (uid, True)
+
     else:
         log.info("Requested user does not exist")
+        return (Error, False)
+
+
+def get_cookie(self):
+    cookie = self.headers.get('Cookie')  # Получаем куки
+    return cookie
+
+
+def set_cookie(self, uid: str = None):
+    cookie = http.cookies.SimpleCookie()
+    cookie['cookie'] = uid
+    self.send_header("Set-Cookie", cookie)
 
 
 class Server_HTTP(BaseHTTPRequestHandler):
     def do_GET(self):
         log.info("GET request recived!")
+        # cookie_string = self.headers.get('Cookie')  # Получаем куки
+        cookie = get_cookie(self)
+        if cookie == None:
+            print("cookie is none")
+        else:
+            print(cookie)
+            print(type(cookie))
+
         self.send_response(200)
         self.send_header("content-type", "text/html")
+        # set_cookie(self)
         self.end_headers()
-
         self.wfile.write(
             bytes("<html><body><h1>Hello World!</h1></body></html>", "utf-8"))
 
@@ -208,23 +272,36 @@ class Server_HTTP(BaseHTTPRequestHandler):
         # =====================
         # Обработка авторизации
         if self.path == "/login":
+            try:
+                # Получение длины тела запроса
+                content_length = int(self.headers["Content-Length"])
 
-            # Получение длины тела запроса
-            content_length = int(self.headers["Content-Length"])
+                # Получение тела запроса
+                body = self.rfile.read(content_length)
+                body = json.loads(body)  # Конвертируем json в словарь
 
-            # Получение тела запроса
-            body = self.rfile.read(content_length)
-            body = json.loads(body)  # Конвертируем json в словарь
+                # Валидация полей JSON файла
+                validate(body, login_schema)
 
-            # Валидация полей JSON файла
-            validate(body, login_schema)
+                # Хешируем пароль пользователя
+                user_pw = hashlib.sha256(
+                    bytes(body["password"], "UTF-8")).hexdigest()
+                user_data = (body["login"], user_pw)
 
-            # Хешируем пароль пользователя
-            user_pw = hashlib.sha256(
-                bytes(body["password"], "UTF-8")).hexdigest()
-            user_data = (body["login"], user_pw)
+                login = login_user(connection, user_data)
+                uid = login[0]
+                if login[1] == True:
+                    pass
 
-            login_user(connection, user_data)
+                elif login[1] == False:
+                    pass
+
+                respond_json(self, 200, "Ok!", uid)
+
+            # JSON format error
+            except ValidationError as e:
+                # respond_json(self, 400, f"Json is not valid! Error'{e}'")
+                log.error(f"Json is not valid! Error'{e}'")
 
         # Обработка выхода
         if self.path == "/logout":
@@ -232,12 +309,13 @@ class Server_HTTP(BaseHTTPRequestHandler):
             # print("Получен запрос /logout")
 
 
-server = HTTPServer((host, port), Server_HTTP)
-log.info("Server now running...")
-print("Server now running...")
 try:
+    server = HTTPServer((host, port), Server_HTTP)
+    log.info("Server now running...")
+    print("Server now running...")
     server.serve_forever()
+
 except KeyboardInterrupt:
     server.shutdown()
-    print("Server shutdown")
-    log.info("Server shutdown")
+    log.info("Server shutdown...")
+    print("\nServer shutdown...")
