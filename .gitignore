@@ -1,7 +1,8 @@
-register.json
 sample.txt
 .venv
 test.py
-login.json
 sqlite_base.db
 app.log
+__pycache__
+.vscode
+test_server.py
