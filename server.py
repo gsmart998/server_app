@@ -1,3 +1,4 @@
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from http.cookies import SimpleCookie
 import schema_template as schema
@@ -8,7 +9,7 @@ from jsonschema.exceptions import ValidationError
 from json.decoder import JSONDecodeError
 from email_validator import validate_email, EmailNotValidError
 from my_logging import log
-from service import Service
+from service import Service, UserNotFounError, IncorrectPasswordError
 from request import Request
 
 
@@ -40,34 +41,28 @@ class Handlers(Request):
         """
         log.info("POST request recived")
         path, cookie = Request.read(self)
-
-        # list = ("/register", "/login", "/logout")
+        print(f"Cookie recived: '{cookie}'")
+        Service.check_cookie(cookie)
 
         if path == "/register":
             try:
                 user_data = Request.parse(self, path)
                 Service.register_user(user_data)
 
-            except:
+            except Exception:
                 print("Registration Error")
 
         if path == "/login":
             try:
                 user_data = Request.parse(self, path)
-                Service.login_user(user_data)
-            except:
-                print("Login Error")
+                user_id = Service.login_user(user_data)
+                # new_cookie = Service.make_cookie(user_id)
+                # Request.respond(self, 200, "json OK", new_cookie)
 
-            # # user_data = Request.pass_hash(body)
-            # # error = Db.register_user(user_data)
-            # if error != None:
-            #     log.error(error)
-            #     Request.respond(self, 404, "json error")
-            # else:
-            #     Request.respond(self, 200, "test json")
-            # exceptions...
-            # except Error as e:
-            #     print(f"The error '{e}' occurred")
+            except UserNotFounError:
+                print("User not found")
+            except IncorrectPasswordError:
+                print("Incorrect user password")
 
     def do_PUT(self):
         pass
@@ -84,6 +79,11 @@ class TestServer(BaseHTTPRequestHandler, Handlers):
     # u = Db.login_user(user)
     # print(u)
     # print(type(u))
+    # test
+    data_time_obj = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+    print(type(data_time_obj), data_time_obj)
+    new_dat = datetime.strptime(data_time_obj, "%d/%m/%Y, %H:%M:%S")
+    print(new_dat < datetime.now())
 
     Handlers.do_GET
     Handlers.do_POST
@@ -102,15 +102,7 @@ except KeyboardInterrupt:
     server.shutdown()
     print("\nServer shutdown...")
     log.info("Server shutdown...")
-#
-##
-#
-#
-#
-#
-#
-#
-#
+
 
 #################################################################
 

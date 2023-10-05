@@ -37,14 +37,34 @@ class Db:
     def get_password(user_data: dict):
         """
         Recive user login. user_data: (ud["login"])
-        Return user password.
+        Return user (password, id) or None.
         """
         user = (user_data["login"],)
-        password = fetch_one(get_password_template, user)
+        password, user_id = fetch_one(get_password_template, user)
         if password != None:
-            return (password[0])
+            return password, user_id
         else:
-            raise UserNotFounError("'get_password' User not found")
+            return None
+
+    def create_session(session_data: tuple):
+        """
+        session_data: (uid, expire, user_id)
+        """
+        create_query(create_session, session_data)
+
+    def check_session(session_id: str):
+        """
+        session_id: uid. Check active sessions in DB.
+        Return session_data: ('uid', 'epire', 'user_id')
+        """
+        session_id = (session_id,)
+        session_data = fetch_one(find_session_template, session_id)
+        if session_data == None:
+            log.info("'check_session' Session did not found.")
+            return None
+        else:
+            log.info("'check_session' Session was found.")
+            return session_data
 
 
 def create_query(template: str, data: tuple):
@@ -236,7 +256,12 @@ SELECT * FROM users WHERE login = ? AND email = ?;
 
 # Поиск пользоватяля для входа
 get_password_template = """
-SELECT password FROM users WHERE login = ?;
+SELECT password, id FROM users WHERE login = ?;
+"""
+
+# Поиск сессии
+find_session_template = """
+SELECT * FROM sessions WHERE uid = ?;
 """
 
 query_dict = {
