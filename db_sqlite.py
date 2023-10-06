@@ -8,6 +8,16 @@ class UserNotFounError(Exception):
 
 
 class Db:
+    def init_tables():
+        """
+        Preparing the database, creating tables of users,
+        tasks and sessions.
+        """
+        initialization(create_users_table)
+        initialization(create_tasks_table)
+        initialization(create_sessions_table)
+        log.info("Database initialized successfully.")
+
     def create_user(user_data: dict):
         """
         Accepts user_data: dict as input.
@@ -127,6 +137,26 @@ def fetch_few(template, data: tuple):
         log.info("Connection to SQLite DB successful")
         cursor = connection.cursor()
         cursor.execute(template, data)
+        result = cursor.fetchall()
+        connection.commit()
+        cursor.close()
+        log.info("Query executed successfully")
+        return result
+    except Error as e:
+        log.error(f"The error '{e}' occurred")
+        return None
+    finally:
+        if connection:
+            connection.close()
+            log.info("Connection to SQLite DB closed")
+
+def initialization(template):
+    connection = None
+    try:
+        connection = sqlite3.connect("sqlite_base.db")
+        log.info("Connection to SQLite DB successful")
+        cursor = connection.cursor()
+        cursor.execute(template)
         result = cursor.fetchall()
         connection.commit()
         cursor.close()
