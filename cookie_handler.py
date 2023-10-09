@@ -24,10 +24,10 @@ class Cookie:
         log.info(f"New session '{uid}' created.")
         return uid
 
-    def check_cookie(cookie: str) -> bool:
+    def check_cookie(cookie: str):
         """
         Recive cookie (seesion uid). Check it in DB.
-        If it exists and not expired - return True.
+        If it exists and not expired - return user_id.
         Else - return False
         """
         session_data = Db.check_session(cookie)
@@ -49,4 +49,4 @@ class Cookie:
             else:
                 print("cookie is ok")
                 log.info("Cookie is ok")
-                return True
+                return user_id

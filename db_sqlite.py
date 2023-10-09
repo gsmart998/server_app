@@ -65,7 +65,7 @@ class Db:
     def check_session(session_id: str):
         """
         session_id: uid. Check active sessions in DB.
-        Return session_data: ('uid', 'epire', 'user_id')
+        Return session_data: ('uid', 'expire', 'user_id')
         """
         session_id = (session_id,)
         session_data = fetch_one(find_session_template, session_id)
@@ -75,6 +75,34 @@ class Db:
         else:
             log.info("'check_session' Session was found.")
             return session_data
+
+    def get_tasks(user_id: int):
+        """Recive user_id:int"""
+
+        user_id = (user_id,)
+        result = fetch_few(find_tasks_template, user_id)
+        return result
+
+    def new_task(data: tuple):
+        """data: ('task', 'completed', 'user_id')"""
+        create_query(create_todo_template, data)
+
+    def get_task(task_id: int, user_id):
+        data = (task_id, user_id)
+        task = fetch_one(find_one_task_template, data)
+        return task
+
+    def update_task(new_data):
+        """data: task, completed, id"""
+
+        create_query(update_todo_template, new_data)
+
+    def update_session(new_expire: str, session_id: str):
+        """
+        Recive new expire datetime and session_id.
+        """
+        data = (new_expire, session_id)
+        create_query(update_sessions_date_template, data)
 
 
 def create_query(template: str, data: tuple):
@@ -150,6 +178,7 @@ def fetch_few(template, data: tuple):
             connection.close()
             log.info("Connection to SQLite DB closed")
 
+
 def initialization(template):
     connection = None
     try:
@@ -171,62 +200,6 @@ def initialization(template):
             log.info("Connection to SQLite DB closed")
 
 
-# def login_user(user_data: dict):
-#     """user = (ud["login"], ud["password"])"""
-#     connection = None
-#     ud = user_data
-#     user = (ud["login"], ud["password"])
-#     try:
-#         connection = sqlite3.connect("sqlite_base.db")
-#         log.info("Connection to SQLite DB successful")
-#         cursor = connection.cursor()
-#         cursor.execute(login_user_template, user)
-#         result = cursor.fetchone()
-#         connection.commit()
-#         cursor.close()
-#         if result == None:
-#             log.error("User not found. Check login and password")
-#             raise UserNotFounError("User not found. Check login and password")
-#         log.info("Query executed successfully")
-#         return result
-#     except Error as e:
-#         log.error(f"The error '{e}' occurred")
-
-#     finally:
-#         if connection:
-#             connection.close()
-#             log.info("Connection to SQLite DB closed")
-
-
-# class Db:
-
-    # def init():
-    #     execute_query("create_users_table")
-    #     execute_query("create_tasks_table")
-    #     execute_query("create_sessions_table")
-
-    # def create_user(user_data: tuple):  # create_user
-    #     """
-    #     Recives the user's data: name, email, login,
-    #     password as tuple. Return error.
-    #     """
-    #     _, error = execute_query("create_user", user_data)
-    #     return error
-
-    # def create_session(data):
-    #     execute_query("create_session", data)
-
-    # def login_user(data) -> tuple | None:
-    #     """
-    #     Recive the user's login and password as input.
-    #     Returns a tuple with the user if it matches either None.
-    #     """
-    #     user, error = execute_query("login_user", data)
-    #     if user == []:
-    #         print("User not found")
-    #         return
-    #     else:
-    #         return user[0]
 # Запрос на создание таблицы users
 create_users_table = """
 CREATE TABLE IF NOT EXISTS users (
@@ -243,7 +216,8 @@ password VARCHAR(130) NOT NULL
 create_tasks_table = """
 CREATE TABLE IF NOT EXISTS tasks(
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-task VARCHAR(100) NOT NULL,
+task VARCHAR(200) NOT NULL,
+completed INTEGER NOT NULL,
 user_id INTEGER NOT NULL,
 FOREIGN KEY (user_id) REFERENCES users (id)
 );
@@ -284,22 +258,47 @@ check_user_template = """
 SELECT * FROM users WHERE login = ? AND email = ?;
 """
 
+
 # Поиск пользоватяля для входа
 get_password_template = """
 SELECT password, id FROM users WHERE login = ?;
 """
+
 
 # Поиск сессии
 find_session_template = """
 SELECT * FROM sessions WHERE uid = ?;
 """
 
-query_dict = {
-    "create_users_table": create_users_table,
-    "create_tasks_table": create_tasks_table,
-    "create_sessions_table": create_sessions_table,
-    "create_session": create_session,
-    "create_user": create_user_template,
-    "check_user": check_user_template,
-    "get_password": get_password_template
-}
+
+# Tasks search
+find_tasks_template = """
+SELECT id, task, completed FROM tasks WHERE user_id = ?;
+"""
+
+# Task search
+find_one_task_template = """
+SELECT * FROM tasks WHERE id = ? AND user_id = ?;
+"""
+
+# Todo update
+update_todo_template = """
+UPDATE tasks
+SET task = ?, completed = ?
+WHERE id = ?;
+"""
+
+
+# Session date update
+update_sessions_date_template = """
+UPDATE sessions SET expire = ? WHERE uid = ?;
+"""
+
+
+# Create new todo
+create_todo_template = """
+INSERT INTO
+tasks (task, completed, user_id)
+VALUES
+(?, ?, ?);
+"""

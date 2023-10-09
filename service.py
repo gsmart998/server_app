@@ -1,7 +1,10 @@
+from datetime import datetime
+import json
 from email_validator import validate_email, EmailNotValidError
 from pass_handler import Password
 from my_logging import log
 from db_sqlite import UserNotFounError, Db
+from cookie_handler import Cookie
 
 
 class IncorrectPasswordError(Exception):
@@ -51,7 +54,7 @@ class Service:
             try:
                 Db.create_user(user_data)
             except:
-                log.error("Error occurred")  # Need to fix!
+                log.error("Error occurred")  # Handle exception
 
     def login_user(user_data: dict) -> int:
         """
@@ -72,19 +75,67 @@ class Service:
                 print("Password correct")
                 return user_id
 
-    def logout_user():
-        # принимает session id
-        # проверяет session id в базе данных и помечает ее завершенной
-        pass
+    def auth_check(cookie):
+        """
+        Recive cookie and check it for relevance.
+        Rerurn user_id if cookie is valid, else False.
+        """
+        user_id = Cookie.check_cookie(cookie)
+        if user_id == False:
+            log.error("User don't have permission to access.")
+            return False
+        return user_id
 
-    # def get_todos():
-    #     pass
+    def get_todos(user_id: int):
+        """
+        Recive user_id, return user todos as json.
+        """
+        todos = Db.get_tasks(user_id)
+        if todos == None:
+            log.info("Todos not found.")
+            print("Todos not found.")
 
-    # def get_todo():
-    #     pass
+        sample = ("id", "text", "completed")
+        todos_list = []
+        for i in range(len(todos)):
+            todo = todos[i]
+            res = {sample: todo for sample, todo in zip(sample, todo)}
+            if res["completed"] == 0:
+                res["completed"] = False
+            elif res["completed"] == 1:
+                res["completed"] = True
+            else:
+                res["completed"] = "Wrong status code."
+            todos_list.append(res)
+        todos_json = json.dumps(todos_list)
+        return todos_json
 
-    # def check_session():
-    #     pass
+    def create_todo(todo: dict, user_id: str):
+        """Recive new todo as dict and user id. Add it to DB.
+        todo: {"task": "text", "completed": 0}.
+        """
+        data = (todo["task"], todo["completed"], user_id)
+        Db.new_task(data)
 
-    # def create_session():
-    #     pass
+    def update_todo(update_todo: dict, user_id: str):
+        """update_todo: {'id': int, 'task': 'text', 'completed': 0}."""
+        # check todo for exist
+        # update todo
+        task_id = update_todo["id"]
+        new_task = update_todo["task"]
+        completed = update_todo["completed"]
+        new_data = (new_task, completed, task_id)
+
+        old_todo = Db.get_task(task_id, user_id)
+        print(old_todo)
+        if old_todo == None:
+            log.error("Todo does not exists, or user doesn't have access rights.")
+            # handle error
+        else:
+            Db.update_task(new_data)
+
+    def logout_user(session_id: str):
+        """Check session_id in DB and marks it with current datetime (expired)."""
+
+        new_expire = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+        Db.update_session(new_expire, session_id)

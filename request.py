@@ -62,4 +62,4 @@ class Request:
             self.send_header("Set-Cookie", cookie)
         self.end_headers()
         self.wfile.write(bytes(json, "UTF-8"))
-        # logging.info("Reply sent")
+        log.info(f"Respdond sent with code: '{code}'.")
