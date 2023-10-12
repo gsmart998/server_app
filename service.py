@@ -119,20 +119,31 @@ class Service:
 
     def update_todo(update_todo: dict, user_id: str):
         """update_todo: {'id': int, 'task': 'text', 'completed': 0}."""
-        # check todo for exist
-        # update todo
+
         task_id = update_todo["id"]
         new_task = update_todo["task"]
         completed = update_todo["completed"]
         new_data = (new_task, completed, task_id)
-
+        # Try to check todo for exist
         old_todo = Db.get_task(task_id, user_id)
-        print(old_todo)
+
         if old_todo == None:
             log.error("Todo does not exists, or user doesn't have access rights.")
             # handle error
         else:
             Db.update_task(new_data)
+
+    def delete_todo(todo: dict, user_id):
+        """Recive todo:dict with todo id"""
+        task_id = todo["id"]
+        task = Db.get_task(task_id, user_id)
+        if task == None:
+            print("Todo with current ID didn't found.")
+        else:
+            print(f"Todo found: '{task}'")
+            Db.delete_task(task_id)
+            log.info(f"'delte_todo' Task with id: '{
+                     task_id}' has been deleted.")
 
     def logout_user(session_id: str):
         """Check session_id in DB and marks it with current datetime (expired)."""

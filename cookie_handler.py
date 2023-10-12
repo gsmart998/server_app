@@ -50,3 +50,20 @@ class Cookie:
                 print("cookie is ok")
                 log.info("Cookie is ok")
                 return user_id
+
+
+class MyCookie:
+    def __init__(self):
+        self.uid = None
+        self.user_id = None
+        self.path = "/"
+        self.expire = None
+
+    def new(self):
+        self.uid = str(uuid.uuid4())
+
+    def _print(self):
+        print("uid:", self.uid)
+        print("user_id", self.user_id)
+        print("path", self.path)
+        print("expire", self.expire)

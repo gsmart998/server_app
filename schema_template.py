@@ -49,6 +49,15 @@ update_todo_schema = {
     "additionalProperties": False
 }
 
+delete_todo_schema = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "number"}
+    },
+    "required": ["id"],
+    "additionalProperties": False
+}
+
 
 def json_validate(body, path: str):
     """
@@ -77,6 +86,12 @@ def json_validate(body, path: str):
     elif path == "/todo":
         try:
             validate(body, update_todo_schema)
+        except ValidationError as e:
+            return f"Json is not valid! Error'{e}'"
+
+    elif path == "/delete":
+        try:
+            validate(body, delete_todo_schema)
         except ValidationError as e:
             return f"Json is not valid! Error'{e}'"
 

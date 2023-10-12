@@ -1,6 +1,7 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from cookie_handler import Cookie
+import uuid
+from cookie_handler import Cookie, MyCookie
 from sqlite3 import Error
 from my_logging import log
 from service import Service, UserNotFounError, IncorrectPasswordError
@@ -17,30 +18,25 @@ class Handlers(Request):
         path, cookie = Request.read(self)
 
         if path != "/todos":
-            log.error("Wrong '/path'.")
+            log.error("'do_GET' Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
 
-        user_id = Service.auth_check(cookie)
-        if user_id == False:
-            Request.respond(self, 401, "Auth error.")
-
         else:
-            # Return todo list from db
-            todos = Service.get_todos(user_id)
+            user_id = Service.auth_check(cookie)
+            if user_id == False:
+                Request.respond(self, 401, "Auth error.")
 
-            Request.respond(self, 200, todos)
+            else:
+                # Return todo list from db
+                todos = Service.get_todos(user_id)
+
+                Request.respond(self, 200, todos)
 
     def do_POST(self):
-        """
-        - /register
-        - /login
-        - /logout
-        - /new
-        """
+        """/register, /login, /logout, /new """
+
         log.info("POST request recived.")
         path, cookie = Request.read(self)
-        # print(f"Cookie recived: '{cookie}'")
-        # cookie_status = Cookie.check_cookie(cookie)
 
         if path == "/register":
             log.info("Request '/register'.")
@@ -89,21 +85,34 @@ class Handlers(Request):
         if path != "/todo":
             log.error("Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
-        user_id = Service.auth_check(cookie)
-        update_todo = Request.parse(self, path)
-        Service.update_todo(update_todo, user_id)
+        else:
+            user_id = Service.auth_check(cookie)
+            if user_id == False:
+                Request.respond(self, 401, "Auth error.")
+            else:
+                update_todo = Request.parse(self, path)
+                Service.update_todo(update_todo, user_id)
 
-        Request.respond(self, 200, "Task updated JSON.")
+                Request.respond(self, 200, "Task updated JSON.")
 
     def do_DELETE(self):
-        pass
+        log.info("DELETE request recived.")
+        path, cookie = Request.read(self)
+        if path != "/delete":
+            log.error("'do_DELETE' Wrong '/path'.")
+            Request.respond(self, 404, "Wrong '/path'.")
+        else:
+            user_id = Service.auth_check(cookie)
+            if user_id == False:
+                Request.respond(self, 401, "Auth error.")
+            else:
+                todo = Request.parse(self, path)
+                Service.delete_todo(todo, user_id)
+                Request.respond(self, 200, "Task has been deleted.")
 
 
-class TestServer(BaseHTTPRequestHandler, Handlers):
-
-    Db.init_tables()
-    Handlers.do_GET
-    Handlers.do_POST
+class TestServer(Handlers, BaseHTTPRequestHandler):
+    Db.init_tables
 
 
 HOST = "localhost"

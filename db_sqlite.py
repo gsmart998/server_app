@@ -83,19 +83,25 @@ class Db:
         result = fetch_few(find_tasks_template, user_id)
         return result
 
-    def new_task(data: tuple):
-        """data: ('task', 'completed', 'user_id')"""
-        create_query(create_todo_template, data)
-
     def get_task(task_id: int, user_id):
         data = (task_id, user_id)
         task = fetch_one(find_one_task_template, data)
         return task
 
+    def new_task(data: tuple):
+        """data: ('task', 'completed', 'user_id')"""
+
+        create_query(create_todo_template, data)
+
     def update_task(new_data):
         """data: task, completed, id"""
 
         create_query(update_todo_template, new_data)
+
+    def delete_task(task_id: str):
+        """Delete todo by ID"""
+        task_id = (task_id, )
+        create_query(delete_todo_template, task_id)
 
     def update_session(new_expire: str, session_id: str):
         """
@@ -291,7 +297,9 @@ WHERE id = ?;
 
 # Session date update
 update_sessions_date_template = """
-UPDATE sessions SET expire = ? WHERE uid = ?;
+UPDATE sessions
+SET expire = ?
+WHERE uid = ?;
 """
 
 
@@ -301,4 +309,12 @@ INSERT INTO
 tasks (task, completed, user_id)
 VALUES
 (?, ?, ?);
+"""
+
+
+# Delete todo
+delete_todo_template = """
+DELETE FROM
+tasks
+WHERE id = ?;
 """

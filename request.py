@@ -10,7 +10,7 @@ class ParseErorr(Exception):
     pass
 
 
-class Request:
+class Request():
     """
     Class for processing incoming requests.
     Reads, parses, and allows you to generate a response.
