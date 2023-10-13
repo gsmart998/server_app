@@ -4,7 +4,6 @@ from email_validator import validate_email, EmailNotValidError
 from pass_handler import Password
 from my_logging import log
 from db_sqlite import UserNotFounError, Db
-from cookie_handler import Cookie
 
 
 class IncorrectPasswordError(Exception):
@@ -56,7 +55,7 @@ class Service:
             except:
                 log.error("Error occurred")  # Handle exception
 
-    def login_user(user_data: dict) -> int:
+    def login_user(user_data: dict, my_cookie) -> int:
         """
         Recive user_data: dict {"login": "test", "password": "test"}
         Return user_id: int
@@ -72,19 +71,33 @@ class Service:
                 raise IncorrectPasswordError(
                     "'check_password' Error occurred, incorrect password.")
             else:
-                print("Password correct")
-                return user_id
+                log.info("'login_user' Password correct.")
+                my_cookie.user_id = user_id
 
-    def auth_check(cookie):
+    def auth_check(my_cookie) -> bool:
         """
-        Recive cookie and check it for relevance.
-        Rerurn user_id if cookie is valid, else False.
+        Recive cookie uid and check it for relevance.
+        Add user_id to cookie. Return True if OK, else - False.
         """
-        user_id = Cookie.check_cookie(cookie)
-        if user_id == False:
-            log.error("User don't have permission to access.")
+        my_cookie.check_cookie()
+
+        if my_cookie.user_id == None:
+            print(my_cookie)
+            log.error("No sessions. User don't have permission to access.")
             return False
-        return user_id
+
+        else:
+            if my_cookie.expire_datetime < datetime.now():
+                print("cookie is expired")
+                log.info("Cookie is expired")
+                my_cookie.expired = True
+                return False
+
+            else:
+                print("cookie is ok")
+                log.info("Cookie is ok")
+                my_cookie.expired = False
+                return True
 
     def get_todos(user_id: int):
         """

@@ -6,64 +6,59 @@ import uuid
 from datetime import datetime, timedelta
 
 
-class Cookie:
-    def make_cookie(user_id: int) -> str:
+class MyCookie:
+    def __init__(self):
+        self.uid = None
+        self.user_id = None
+        self.path = "/"
+        self.expire_datetime = None  # store datetime object
+        self.expired = None
+
+    def _print(self):
+        print("uid:", self.uid)
+        print("user_id", self.user_id)
+        print("path", self.path)
+        print("expire_time", self.expire_datetime)
+        print("expired", self.expired)
+
+    def check_cookie(self):
         """
-        Recive user_data: id. Create new session in DB.
-        And return cookie with session UUID.
+        Recive cookie. Check it in DB by uid.
+        If it exists and not expired - add user_id to my_cookie.
+        """
+        session_data = Db.check_session(self.uid)
+        if session_data == None:
+            print("Session did not found.")
+            log.info("Session did not found.")
+
+        else:
+            print(f"Found one session: '{session_data}'")
+            log.info(f"Found one session: '{session_data}'")
+
+            uid, expire, user_id = session_data
+            self.user_id = user_id
+            print(self.user_id)
+
+            # Convert string expire to data obj
+            expire = datetime.strptime(expire, "%d/%m/%Y, %H:%M:%S")
+            self.expire_datetime = expire
+
+    def new_uid(self):
+        """
+        Generate new session UUID. Create new session in DB.
+        And add new data to my_cookie.
         """
         # Unique session ID
         uid = str(uuid.uuid4())
         # Session lifetime - 30 minutes
         expire = datetime.now() + timedelta(minutes=30)
         # Convert to string with custom format
-        expire = expire.strftime("%d/%m/%Y, %H:%M:%S")
-        session_data = (uid, expire, user_id)
+        expire_str = expire.strftime("%d/%m/%Y, %H:%M:%S")
+        session_data = (uid, expire_str, self.user_id)
         # Add to DB new session
         Db.create_session(session_data)  # Add exceptions handler!!!
         log.info(f"New session '{uid}' created.")
-        return uid
 
-    def check_cookie(cookie: str):
-        """
-        Recive cookie (seesion uid). Check it in DB.
-        If it exists and not expired - return user_id.
-        Else - return False
-        """
-        session_data = Db.check_session(cookie)
-        if session_data == None:
-            print("Session did not found.")
-            log.info("Session did not found.")
-            return False
-        else:
-            print(f"Found one session: '{session_data}'")
-            log.info(f"Found one session: '{session_data}'")
-            uid, expire, user_id = session_data
-
-            # Convert string expire to data obj
-            expire = datetime.strptime(expire, "%d/%m/%Y, %H:%M:%S")
-            if expire < datetime.now():
-                print("cookie is expired")
-                log.info("Cookie is expired")
-                return False
-            else:
-                print("cookie is ok")
-                log.info("Cookie is ok")
-                return user_id
-
-
-class MyCookie:
-    def __init__(self):
-        self.uid = None
-        self.user_id = None
-        self.path = "/"
-        self.expire = None
-
-    def new(self):
-        self.uid = str(uuid.uuid4())
-
-    def _print(self):
-        print("uid:", self.uid)
-        print("user_id", self.user_id)
-        print("path", self.path)
-        print("expire", self.expire)
+        # Add new data to my_cookie
+        self.uid = uid
+        self.expire_datetime = expire

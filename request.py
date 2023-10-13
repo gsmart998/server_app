@@ -16,14 +16,13 @@ class Request():
     Reads, parses, and allows you to generate a response.
     """
 
-    def read(self) -> tuple:
+    def read(self, my_cookie):
         """
-        Read recived request and return path
-        '/some_path' and optionally a cookie
+        Read recived request for path
+        '/some_path' and cookie uid.
         """
-        path = self.path
-        cookie = self.headers.get('Cookie')
-        return (path, cookie)
+        my_cookie.uid = self.headers.get('Cookie')
+        my_cookie.path = self.path
 
     def parse(self, path: str) -> dict:
         """

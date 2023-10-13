@@ -1,7 +1,7 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import uuid
-from cookie_handler import Cookie, MyCookie
+from cookie_handler import MyCookie
 from sqlite3 import Error
 from my_logging import log
 from service import Service, UserNotFounError, IncorrectPasswordError
@@ -14,61 +14,66 @@ class Handlers(Request):
 
     def do_GET(self):
         """/todos"""
-        log.info("GET request '/todos' recived.")
-        path, cookie = Request.read(self)
 
-        if path != "/todos":
+        log.info("GET request '/todos' recived.")
+        my_cookie = MyCookie()
+        Request.read(self, my_cookie)
+
+        if my_cookie.path != "/todos":
             log.error("'do_GET' Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
 
         else:
-            user_id = Service.auth_check(cookie)
-            if user_id == False:
+            if Service.auth_check(my_cookie) == False:
                 Request.respond(self, 401, "Auth error.")
 
             else:
-                # Return todo list from db
-                todos = Service.get_todos(user_id)
-
+                todos = Service.get_todos(my_cookie.user_id)
                 Request.respond(self, 200, todos)
+
+        my_cookie._print()  # test
 
     def do_POST(self):
         """/register, /login, /logout, /new """
 
         log.info("POST request recived.")
-        path, cookie = Request.read(self)
+        my_cookie = MyCookie()
+        Request.read(self, my_cookie)
 
-        if path == "/register":
+        if my_cookie.path == "/register":
             log.info("Request '/register'.")
             try:
-                user_data = Request.parse(self, path)
-                Service.register_user(user_data)
+                user_data = Request.parse(self, my_cookie.path)
+                Service.register_user(user_data)  # Fix register_user func
+                Request.respond(self, 200, "User successfully registered.")
                 log.info("User successfully registered.")
 
             except Exception:
                 print("Registration Error")
 
-        if path == "/login":
+        if my_cookie.path == "/login":
             log.info("Request '/login'.")
             try:
-                user_data = Request.parse(self, path)
-                user_id = Service.login_user(user_data)
-                new_cookie = Cookie.make_cookie(user_id)
-                Request.respond(self, 200, "json OK", new_cookie)
+                user_data = Request.parse(self, my_cookie.path)
+                Service.login_user(user_data, my_cookie)
+                my_cookie.new_uid()
+                Request.respond(self, 200, "json OK", my_cookie.uid)
                 log.info("User has been authorized.")
+
+                my_cookie._print()  # test
 
             except UserNotFounError:
                 print("User not found")
             except IncorrectPasswordError:
                 print("Incorrect user password")
 
-        if path == "/logout":
+        if my_cookie.path == "/logout":
             log.info("Requeset '/logout'.")
             Service.logout_user(cookie)
             Request.respond(self, 200, "User logged out.")
             log.info(f"Session '{cookie}' ended. User has logged out.")
 
-        if path == "/new":
+        if my_cookie.path == "/new":
             log.info("Request '/new'.")
             user_id = Service.auth_check(cookie)
             if user_id == False:
@@ -112,6 +117,7 @@ class Handlers(Request):
 
 
 class TestServer(Handlers, BaseHTTPRequestHandler):
+
     Db.init_tables
 
 
