@@ -55,7 +55,7 @@ class Service:
             except:
                 log.error("Error occurred")  # Handle exception
 
-    def login_user(user_data: dict, my_cookie) -> int:
+    def login_user(user_data: dict) -> int:
         """
         Recive user_data: dict {"login": "test", "password": "test"}
         Return user_id: int
@@ -72,32 +72,7 @@ class Service:
                     "'check_password' Error occurred, incorrect password.")
             else:
                 log.info("'login_user' Password correct.")
-                my_cookie.user_id = user_id
-
-    def auth_check(my_cookie) -> bool:
-        """
-        Recive cookie uid and check it for relevance.
-        Add user_id to cookie. Return True if OK, else - False.
-        """
-        my_cookie.check_cookie()
-
-        if my_cookie.user_id == None:
-            print(my_cookie)
-            log.error("No sessions. User don't have permission to access.")
-            return False
-
-        else:
-            if my_cookie.expire_datetime < datetime.now():
-                print("cookie is expired")
-                log.info("Cookie is expired")
-                my_cookie.expired = True
-                return False
-
-            else:
-                print("cookie is ok")
-                log.info("Cookie is ok")
-                my_cookie.expired = False
-                return True
+                return user_id
 
     def get_todos(user_id: int):
         """

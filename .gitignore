@@ -1,8 +1,5 @@
-sample.txt
 .venv
-test.py
 sqlite_base.db
 app.log
 __pycache__
 .vscode
-test_server.py

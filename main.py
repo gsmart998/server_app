@@ -1,6 +1,5 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import uuid
 from cookie_handler import MyCookie
 from sqlite3 import Error
 from my_logging import log
@@ -17,17 +16,17 @@ class Handlers(Request):
 
         log.info("GET request '/todos' recived.")
         my_cookie = MyCookie()
-        Request.read(self, my_cookie)
+        my_cookie.uid, my_cookie.path = Request.read(self)
 
         if my_cookie.path != "/todos":
             log.error("'do_GET' Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
 
         else:
-            if Service.auth_check(my_cookie) == False:
+            if my_cookie.check_session() == False:
                 Request.respond(self, 401, "Auth error.")
-
             else:
+                # add NO TODOS placeholder!
                 todos = Service.get_todos(my_cookie.user_id)
                 Request.respond(self, 200, todos)
 
@@ -38,7 +37,7 @@ class Handlers(Request):
 
         log.info("POST request recived.")
         my_cookie = MyCookie()
-        Request.read(self, my_cookie)
+        my_cookie.uid, my_cookie.path = Request.read(self)
 
         if my_cookie.path == "/register":
             log.info("Request '/register'.")
@@ -55,7 +54,7 @@ class Handlers(Request):
             log.info("Request '/login'.")
             try:
                 user_data = Request.parse(self, my_cookie.path)
-                Service.login_user(user_data, my_cookie)
+                my_cookie.user_id = Service.login_user(user_data)
                 my_cookie.new_uid()
                 Request.respond(self, 200, "json OK", my_cookie.uid)
                 log.info("User has been authorized.")
@@ -69,50 +68,55 @@ class Handlers(Request):
 
         if my_cookie.path == "/logout":
             log.info("Requeset '/logout'.")
-            Service.logout_user(cookie)
-            Request.respond(self, 200, "User logged out.")
-            log.info(f"Session '{cookie}' ended. User has logged out.")
+            if my_cookie.check_session() == False:
+                Request.respond(self, 401, "Auth error.")
+            else:
+                Service.logout_user(my_cookie.uid)
+                Request.respond(self, 200, "User logged out.")
+                log.info(
+                    f"Session '{my_cookie.uid}' ended. User has logged out.")
 
         if my_cookie.path == "/new":
             log.info("Request '/new'.")
-            user_id = Service.auth_check(cookie)
-            if user_id == False:
+
+            if my_cookie.check_session() == False:
                 Request.respond(self, 401, "Auth error.")
             else:
-                new_todo = Request.parse(self, path)
-                Service.create_todo(new_todo, user_id)
+                new_todo = Request.parse(self, my_cookie.path)
+                Service.create_todo(new_todo, my_cookie.user_id)
                 Request.respond(self, 200, "Task created JSON.")
                 log.info("New todo has been created.")
 
     def do_PUT(self):
         log.info("PUT request recived.")
-        path, cookie = Request.read(self)
-        if path != "/todo":
+        my_cookie = MyCookie()
+        my_cookie.uid, my_cookie.path = Request.read(self)
+        if my_cookie.path != "/todo":
             log.error("Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
         else:
-            user_id = Service.auth_check(cookie)
-            if user_id == False:
+
+            if my_cookie.check_session() == False:
                 Request.respond(self, 401, "Auth error.")
             else:
-                update_todo = Request.parse(self, path)
-                Service.update_todo(update_todo, user_id)
+                update_todo = Request.parse(self, my_cookie.path)
+                Service.update_todo(update_todo, my_cookie.user_id)
 
                 Request.respond(self, 200, "Task updated JSON.")
 
     def do_DELETE(self):
         log.info("DELETE request recived.")
-        path, cookie = Request.read(self)
-        if path != "/delete":
+        my_cookie = MyCookie()
+        my_cookie.uid, my_cookie.path = Request.read(self)
+        if my_cookie.path != "/delete":
             log.error("'do_DELETE' Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
         else:
-            user_id = Service.auth_check(cookie)
-            if user_id == False:
+            if my_cookie.check_session() == False:
                 Request.respond(self, 401, "Auth error.")
             else:
-                todo = Request.parse(self, path)
-                Service.delete_todo(todo, user_id)
+                todo = Request.parse(self, my_cookie.path)
+                Service.delete_todo(todo, my_cookie.user_id)
                 Request.respond(self, 200, "Task has been deleted.")
 
 
