@@ -1,3 +1,4 @@
+from http import cookies
 import json
 from my_logging import log
 
@@ -21,14 +22,15 @@ class Request():
         Read recived request for path '/some_path' and
         cookie uid. return (uid, path)
         """
-        uid = self.headers.get('Cookie')
+        cookie = self.headers.get('Cookie')
+        uid = cookie[cookie.index('=') + 1:]  # fetch uid from cookie
         path = self.path
         return (uid, path)
 
     def parse(self, path: str) -> dict:
         """
         Parse method receive a json and path string,
-        check it for correctness and convert it into a 
+        check it for correctness and convert it into a
         dictionary, then return body as dict.
         """
         # Getting the length of the request body
@@ -59,7 +61,12 @@ class Request():
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         if cookie != None:
-            self.send_header("Set-Cookie", cookie)
+            new_cookie = cookies.SimpleCookie()
+            new_cookie["uid"] = cookie
+            new_cookie["uid"]["path"] = "/"
+            new_cookie["uid"]["HttpOnly"] = True
+
+            self.send_header("Set-Cookie", new_cookie.output(header=''))
         self.end_headers()
         self.wfile.write(bytes(json, "UTF-8"))
         log.info(f"Respdond sent with code: '{code}'.")
