@@ -6,6 +6,8 @@ from my_logging import log
 from service import Service, UserNotFounError, IncorrectPasswordError
 from request import Request
 from db_sqlite import Db
+from dotenv import load_dotenv
+import os
 
 
 class Handlers(Request):
@@ -122,16 +124,16 @@ class Handlers(Request):
 
 class TestServer(Handlers, BaseHTTPRequestHandler):
 
-    Db.init_tables
+    Db.init_tables()
 
-
-HOST = "localhost"
-PORT = 8000
 
 if __name__ == "__main__":
     try:
+        load_dotenv()
+        PORT = int(os.environ["PORT"])
+        HOST = os.environ["HOST"]
         server = HTTPServer((HOST, PORT), TestServer)
-        print("Server now running...")
+        print(f"Server now running on port: {PORT} ...")
         log.info("Server now running...")
         server.serve_forever()
 

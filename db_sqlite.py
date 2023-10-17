@@ -1,10 +1,17 @@
 import sqlite3
 from sqlite3 import Error
 from my_logging import log
+import os
+from dotenv import load_dotenv
 
 
 class UserNotFounError(Exception):
     pass
+
+
+load_dotenv()
+
+DB_PATH = os.environ["DB_PATH"]
 
 
 class Db:
@@ -118,7 +125,7 @@ def create_query(template: str, data: tuple):
     """
     connection = None
     try:
-        connection = sqlite3.connect("sqlite_base.db")
+        connection = sqlite3.connect(DB_PATH)
         log.info("Connection to SQLite DB successful")
         cursor = connection.cursor()
         cursor.execute(template, data)
@@ -142,7 +149,7 @@ def fetch_one(template, data: tuple) -> tuple:
     """
     connection = None
     try:
-        connection = sqlite3.connect("sqlite_base.db")
+        connection = sqlite3.connect(DB_PATH)
         log.info("Connection to SQLite DB successful")
         cursor = connection.cursor()
         cursor.execute(template, data)
@@ -167,7 +174,7 @@ def fetch_few(template, data: tuple):
     """
     connection = None
     try:
-        connection = sqlite3.connect("sqlite_base.db")
+        connection = sqlite3.connect(DB_PATH)
         log.info("Connection to SQLite DB successful")
         cursor = connection.cursor()
         cursor.execute(template, data)
@@ -188,7 +195,7 @@ def fetch_few(template, data: tuple):
 def initialization(template):
     connection = None
     try:
-        connection = sqlite3.connect("sqlite_base.db")
+        connection = sqlite3.connect(DB_PATH)
         log.info("Connection to SQLite DB successful")
         cursor = connection.cursor()
         cursor.execute(template)
