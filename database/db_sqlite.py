@@ -1,8 +1,10 @@
 import sqlite3
 from sqlite3 import Error
-from logs.my_logging import log
 import os
+
 from dotenv import load_dotenv
+
+from logs.my_logging import log
 
 
 class UserNotFounError(Exception):
@@ -10,7 +12,6 @@ class UserNotFounError(Exception):
 
 
 load_dotenv()
-
 DB_PATH = os.environ["DB_PATH"]
 
 

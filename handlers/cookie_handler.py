@@ -1,9 +1,8 @@
-from database.db_sqlite import Db
-from logs.my_logging import log
-
-
 import uuid
+
+from database.db_sqlite import Db
 from datetime import datetime, timedelta
+from logs.my_logging import log
 
 
 class MyCookie:

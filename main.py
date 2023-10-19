@@ -1,21 +1,20 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import os
+
+from dotenv import load_dotenv
+
+from database.db_sqlite import Db
 from handlers.cookie_handler import MyCookie
-from sqlite3 import Error
+from handlers.request import Request, ParseErorr
 from logs.my_logging import log
 from services.service import *
-from handlers.request import Request, ParseErorr
-from database.db_sqlite import Db
-from dotenv import load_dotenv
-import os
 
 
 class Handlers(Request):
     """HTTP Handlers"""
 
     def do_GET(self):
-        """/todos"""
-
         log.info("GET request '/todos' recived.")
         my_cookie = MyCookie()
         my_cookie.uid, my_cookie.path = Request.read(self)
@@ -156,7 +155,6 @@ class Handlers(Request):
 
 
 class MyServer(Handlers, BaseHTTPRequestHandler):
-
     Db.init_tables()
 
 

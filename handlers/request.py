@@ -1,9 +1,8 @@
 from http import cookies
 import json
-from logs.my_logging import log
 
-from email_validator import ValidatedEmail
 import handlers.schema_template as schema
+from logs.my_logging import log
 from jsonschema.exceptions import ValidationError
 
 

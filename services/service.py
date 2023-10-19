@@ -1,9 +1,10 @@
 from datetime import datetime
 import json
-from email_validator import validate_email, EmailNotValidError
-from services.pass_handler import Password
-from logs.my_logging import log
+
 from database.db_sqlite import UserNotFounError, Db
+from email_validator import validate_email, EmailNotValidError
+from logs.my_logging import log
+from services.pass_handler import Password
 
 
 class IncorrectPasswordError(Exception):
