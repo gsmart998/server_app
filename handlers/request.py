@@ -1,9 +1,9 @@
 from http import cookies
 import json
-from my_logging import log
+from logs.my_logging import log
 
 from email_validator import ValidatedEmail
-import schema_template as schema
+import handlers.schema_template as schema
 from jsonschema.exceptions import ValidationError
 
 
@@ -23,7 +23,10 @@ class Request():
         cookie uid. return (uid, path)
         """
         cookie = self.headers.get('Cookie')
-        uid = cookie[cookie.index('=') + 1:]  # fetch uid from cookie
+        if cookie != None:
+            uid = cookie[cookie.index('=') + 1:]  # fetch uid from cookie
+        else:
+            uid = None
         path = self.path
         return (uid, path)
 
@@ -40,14 +43,18 @@ class Request():
         body = self.rfile.read(content_length)
         try:
             body = json.loads(body)  # Convert it to a dictionary
-        except json.JSONDecodeError:
-            log.error("Error while reading json file.")
-            raise ParseErorr("Error while reading json file.")
+        except json.JSONDecodeError as e:
+            log.error("'parse' Error while reading json file. Error'{e}'")
+            raise ParseErorr("Error while reading json file. Error'{e}'")
         # Validation of JSON file fields
         try:
-            schema.json_validate(body, path)
+            error = schema.json_validate(body, path)
+            if error != None:
+                log.error(error)
+                raise ParseErorr(f"Json is not valid!")
+
         except ValidationError as e:
-            log.error(f"Json is not valid! Error'{e}'")
+            log.error(f"'parse' Json is not valid! Error'{e}'")
             raise ParseErorr(f"Json is not valid! Error'{e}'")
 
         return body

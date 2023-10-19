@@ -1,5 +1,5 @@
 from jsonschema import ValidationError, validate
-from my_logging import log
+from logs.my_logging import log
 
 
 # Register template

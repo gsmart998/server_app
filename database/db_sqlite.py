@@ -1,6 +1,6 @@
 import sqlite3
 from sqlite3 import Error
-from my_logging import log
+from logs.my_logging import log
 import os
 from dotenv import load_dotenv
 
@@ -34,22 +34,22 @@ class Db:
         user = (ud["name"], ud["email"], ud["login"], ud["password"])
         create_query(create_user_template, user)
 
-    def check_user(user_data: dict) -> tuple:
+    def check_user(user_data: dict):
         """
         Recive user_data = dict
         user = (ud["login"], ud["email"])
         If user found - return user tuple.
-        Else raise UserNotFoundError
-        Or SQL connection Erorr
+        Else return None.
         """
         ud = user_data
         user = (ud["login"], ud["email"])
         result = fetch_one(check_user_template, user)
         if result != None:
+            log.info("'Check_user' User found.")
             return result
         else:
-            log.error("'Check_user' User not found")
-            raise UserNotFounError("'Check_user' User not found")
+            log.info("'Check_user' User not found.")
+            return
 
     def get_password(user_data: dict):
         """
@@ -57,11 +57,12 @@ class Db:
         Return user (password, id) or None.
         """
         user = (user_data["login"],)
-        password, user_id = fetch_one(get_password_template, user)
-        if password != None:
-            return password, user_id
+        data, error = fetch_one(get_password_template, user)
+        if error == None and data != None:
+            # return hashed_password, user_id
+            return data[0], data[1]
         else:
-            return None
+            return (None, None)
 
     def create_session(session_data: tuple):
         """
@@ -75,13 +76,16 @@ class Db:
         Return session_data: ('uid', 'expire', 'user_id')
         """
         session_id = (session_id,)
-        session_data = fetch_one(find_session_template, session_id)
-        if session_data == None:
-            log.info("'check_session' Session did not found.")
-            return None
+        session_data, error = fetch_one(find_session_template, session_id)
+        if error != None:
+            return None, error
         else:
-            log.info("'check_session' Session was found.")
-            return session_data
+            if session_data == None:
+                log.info("'check_session' Session did not found.")
+                return
+            else:
+                log.info(f"Found one session: '{session_data}'")
+                return session_data, None
 
     def get_tasks(user_id: int):
         """Recive user_id:int"""
@@ -92,13 +96,18 @@ class Db:
 
     def get_task(task_id: int, user_id):
         data = (task_id, user_id)
-        task = fetch_one(find_one_task_template, data)
-        return task
+        task, error = fetch_one(find_one_task_template, data)
+        if error != None:
+            return None, error
+        if error == None and task != None:
+            return task, None
 
     def new_task(data: tuple):
         """data: ('task', 'completed', 'user_id')"""
 
-        create_query(create_todo_template, data)
+        error = create_query(create_todo_template, data)
+        if error != None:
+            return error
 
     def update_task(new_data):
         """data: task, completed, id"""
@@ -115,7 +124,9 @@ class Db:
         Recive new expire datetime and session_id.
         """
         data = (new_expire, session_id)
-        create_query(update_sessions_date_template, data)
+        error = create_query(update_sessions_date_template, data)
+        if error != None:
+            return error
 
 
 def create_query(template: str, data: tuple):
@@ -135,17 +146,17 @@ def create_query(template: str, data: tuple):
 
     except Error as e:
         log.error(f"The error '{e}' occurred")
-        return None, e
+        return e
     finally:
         if connection:
             connection.close()
             log.info("Connection to SQLite DB closed")
 
 
-def fetch_one(template, data: tuple) -> tuple:
+def fetch_one(template, data: tuple):
     """
     Accepts template and user_data: tuple as input.
-    Return tuple or error.
+    Return tuple (result, error).
     """
     connection = None
     try:
@@ -157,10 +168,10 @@ def fetch_one(template, data: tuple) -> tuple:
         connection.commit()
         cursor.close()
         log.info("Query executed successfully")
-        return result
+        return result, None
     except Error as e:
         log.error(f"The error '{e}' occurred")
-        return None
+        return None, e
     finally:
         if connection:
             connection.close()
@@ -268,7 +279,7 @@ VALUES
 
 # Поиск пользователя
 check_user_template = """
-SELECT * FROM users WHERE login = ? AND email = ?;
+SELECT * FROM users WHERE login = ? OR email = ?;
 """
 
 

@@ -1,5 +1,5 @@
-from db_sqlite import Db
-from my_logging import log
+from database.db_sqlite import Db
+from logs.my_logging import log
 
 
 import uuid
@@ -53,28 +53,27 @@ class MyCookie:
                     session without session_uid.")
             return False
         else:
-            session_data = Db.check_session(self.uid)
-            if session_data == None:
-                print("Session did not found.")
-                log.info("Session did not found.")
+            session_data, error = Db.check_session(self.uid)
+            if error != None:
+                log.error(error)
                 return False
             else:
-                log.info(f"Found one session: '{session_data}'")
-                _, expire, user_id = session_data
-                # Convert string expire to data obj
-                expire_datetime = datetime.strptime(
-                    expire, "%d/%m/%Y, %H:%M:%S")
-                self.user_id = user_id
-                self.expire_datetime = expire_datetime
-
-                if expire_datetime < datetime.now():
-                    print("cookie is expired")
-                    log.info("Cookie is expired")
-                    self.expired = True
+                if session_data == None:
                     return False
-
                 else:
-                    print("cookie is ok")
-                    log.info("Cookie is ok")
-                    self.expired = False
-                    return True
+                    _, expire, user_id = session_data
+                    # Convert string expire to data obj
+                    expire_datetime = datetime.strptime(
+                        expire, "%d/%m/%Y, %H:%M:%S")
+                    self.user_id = user_id
+                    self.expire_datetime = expire_datetime
+
+                    if expire_datetime < datetime.now():
+                        log.info(f"Cookie with uid: {self.uid} is expired.")
+                        self.expired = True
+                        return False
+
+                    else:
+                        log.info("Cookie is ok.")
+                        self.expired = False
+                        return True
