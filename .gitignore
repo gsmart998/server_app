@@ -1,5 +1,4 @@
 .venv
-.env
 sqlite_base.db
 app.log
 __pycache__
