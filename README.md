@@ -23,3 +23,78 @@ Server now running on port: 8000 ...
 
 ## Usage
 
+### Registration
+For register a new user, you need to send a POST request with attached JSON.
+
+    Request type: POST
+    URL: localhost:8000/register
+
+```json
+{
+    "name": "John",
+    "login": "admin",
+    "password": "password",
+    "email": "admin@mail.com"
+}
+```
+
+### Login
+To authorize, you must use the data specified during registration.
+
+    Request type: POST
+    URL: localhost:8000/login
+```json
+{
+    "login": "admin",
+    "password": "password"
+}
+```
+
+### New todo
+To create a new todo you must send the following request.
+
+    Request type: POST
+    URL: localhost:8000/new
+```json
+{
+    "task": "Test task #1",
+    "completed": 0
+}
+```
+
+### Get todos
+To get all created todos you need to run the following query. JSON is not needed in this request.
+
+    Request type: GET
+    URL: localhost:8000/todos
+
+
+### Update todo
+To change a previously created todo, you must send the following request with todo id and updated data. The *"completed"* section in the JSON indicates the status of the todo. 0 - not completed, 1 - completed.
+
+    Request type: PUT
+    URL: localhost:8000/todo
+```json
+{
+    "id": 1,
+    "task": "Test UPDATE # 1 postman task",
+    "completed": 0
+}
+```
+
+### Delete todo
+To delete previously created notes, you must send the following request indicating the todo id.
+
+    Request type: DELETE
+    URL: localhost:8000/delete
+```json
+{
+    "id": 16
+}
+```
+
+### Logout
+To log out of your account, you must submit the following request. JSON is not needed in this request.
+
+    Request type: POST
+    URL: localhost:8000/logout
