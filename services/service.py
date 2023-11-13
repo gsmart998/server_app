@@ -110,7 +110,7 @@ class Service:
         """Recive new todo as dict and user id. Add it to DB.
         todo: {"task": "text", "completed": 0}.
         """
-        data = (todo["task"], todo["completed"], user_id)
+        data = (todo["task"], user_id)
         error = Db.new_task(data)
         if error != None:
             log.error("SQL create new task error.")

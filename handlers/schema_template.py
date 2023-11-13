@@ -30,10 +30,9 @@ login_schema = {
 new_todo_schema = {
     "type": "object",
     "properties": {
-        "task": {"type": "string"},
-        "completed": {"type": "number"}
+        "task": {"type": "string"}
     },
-    "required": ["task", "completed"],
+    "required": ["task"],
     "additionalProperties": False
 }
 

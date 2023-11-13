@@ -57,8 +57,7 @@ To create a new todo you must send the following request.
     URL: localhost:8000/new
 ```json
 {
-    "task": "Test task #1",
-    "completed": 0
+    "task": "Test task #1"
 }
 ```
 

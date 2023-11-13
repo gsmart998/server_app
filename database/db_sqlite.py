@@ -44,7 +44,7 @@ class Db:
         """
         ud = user_data
         user = (ud["login"], ud["email"])
-        result = fetch_one(check_user_template, user)
+        result, error = fetch_one(check_user_template, user)
         if result != None:
             log.info("'Check_user' User found.")
             return result
@@ -104,7 +104,7 @@ class Db:
             return task, None
 
     def new_task(data: tuple):
-        """data: ('task', 'completed', 'user_id')"""
+        """data: ('task', 'user_id')"""
 
         error = create_query(create_todo_template, data)
         if error != None:
@@ -152,6 +152,8 @@ def create_query(template: str, data: tuple):
         if connection:
             connection.close()
             log.info("Connection to SQLite DB closed")
+
+#
 
 
 def fetch_one(template, data: tuple):
@@ -327,7 +329,7 @@ create_todo_template = """
 INSERT INTO
 tasks (task, completed, user_id)
 VALUES
-(?, ?, ?);
+(?, 0, ?);
 """
 
 

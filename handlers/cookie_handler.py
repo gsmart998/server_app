@@ -56,23 +56,23 @@ class MyCookie:
             if error != None:
                 log.error(error)
                 return False
+
+            if session_data == None:
+                return False
+
+            _, expire, user_id = session_data
+            # Convert string expire to data obj
+            expire_datetime = datetime.strptime(
+                expire, "%d/%m/%Y, %H:%M:%S")
+            self.user_id = user_id
+            self.expire_datetime = expire_datetime
+
+            if expire_datetime < datetime.now():
+                log.info(f"Cookie with uid: {self.uid} is expired.")
+                self.expired = True
+                return False
+
             else:
-                if session_data == None:
-                    return False
-                else:
-                    _, expire, user_id = session_data
-                    # Convert string expire to data obj
-                    expire_datetime = datetime.strptime(
-                        expire, "%d/%m/%Y, %H:%M:%S")
-                    self.user_id = user_id
-                    self.expire_datetime = expire_datetime
-
-                    if expire_datetime < datetime.now():
-                        log.info(f"Cookie with uid: {self.uid} is expired.")
-                        self.expired = True
-                        return False
-
-                    else:
-                        log.info("Cookie is ok.")
-                        self.expired = False
-                        return True
+                log.info("Cookie is ok.")
+                self.expired = False
+                return True
