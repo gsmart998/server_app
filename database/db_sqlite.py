@@ -227,7 +227,7 @@ def initialization(template):
             log.info("Connection to SQLite DB closed")
 
 
-# Запрос на создание таблицы users
+# Init table users
 create_users_table = """
 CREATE TABLE IF NOT EXISTS users (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,7 +239,7 @@ password VARCHAR(130) NOT NULL
 """
 
 
-# Запрос на создание таблицы tasks
+# Init table tasks
 create_tasks_table = """
 CREATE TABLE IF NOT EXISTS tasks(
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -251,7 +251,7 @@ FOREIGN KEY (user_id) REFERENCES users (id)
 """
 
 
-# Запрос на создание таблицы sessions
+# Init table sessions
 create_sessions_table = """
 CREATE TABLE IF NOT EXISTS sessions(
 uid VARCHAR(50) PRIMARY KEY,
