@@ -77,7 +77,7 @@ To change a previously created todo, you must send the following request with to
 {
     "id": 1,
     "task": "Test UPDATE # 1 postman task",
-    "completed": 0
+    "completed": false
 }
 ```
 

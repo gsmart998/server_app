@@ -42,7 +42,7 @@ update_todo_schema = {
     "properties": {
         "id": {"type": "number"},
         "task": {"type": "string"},
-        "completed": {"type": "number"}
+        "completed": {"type": "boolean"}
     },
     "required": ["id", "task", "completed"],
     "additionalProperties": False
