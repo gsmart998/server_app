@@ -14,8 +14,8 @@ class DbSessions:
         if error != None:
             return None, error
         # return hashed_password, user_id
-        result = (data[0], data[1])
-        return result, None
+        # result = (data[0], data[1])
+        return data, None
 
     def create_session(session_data: tuple):
         """

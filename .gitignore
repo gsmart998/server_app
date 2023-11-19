@@ -3,3 +3,4 @@ sqlite_base.db
 app.log
 __pycache__
 .vscode
+docker-compose.yml

@@ -30,7 +30,8 @@ class Service:
 
         checked_user, error = DbUsers.check_user(user_data)
         if error != None:
-            log.error("Error while execute query.")
+            raise err.SqlQueryExecError("'DbUsers.check_user' SQL error.")
+
         if checked_user == None:
             error = DbUsers.create_user(user_data)
             if error != None:
@@ -50,18 +51,19 @@ class Service:
         data, error = DbSessions.get_password(user_data)
         if error != None:
             raise err.SqlQueryExecError("'login_user' SQL get password error.")
-        hashed_password, user_id = data
-        if hashed_password == None:
+        if data == None:
             log.error("'login_user' Requsted user not found")
             raise err.UserNotFounError("'login_user' Requsted user not found")
-        else:
-            if Password.check_password(hashed_password, user_data["password"]) == False:
-                log.error("'check_password' Error occurred, incorrect password.")
-                raise err.IncorrectPasswordError(
-                    "'check_password' Error occurred, incorrect password.")
-            else:
-                log.info("'login_user' Password correct.")
-                return user_id
+
+        hashed_password, user_id = data
+
+        if Password.check_password(hashed_password, user_data["password"]) == False:
+            log.error("'check_password' Error occurred, incorrect password.")
+            raise err.IncorrectPasswordError(
+                "'check_password' Error occurred, incorrect password.")
+
+        log.info("'login_user' Password correct.")
+        return user_id
 
     def get_todos(user_id: int) -> str:
         """
@@ -84,6 +86,8 @@ class Service:
             res = {sample: todo for sample, todo in zip(sample, todo)}
             todos_list.append(res)
         todos_json = json.dumps(todos_list)
+        print(type(todos_json))
+
         return todos_json
 
     def create_todo(todo: dict, user_id: str):

@@ -22,12 +22,16 @@ class Request():
         cookie uid. return (uid, path)
         """
         cookie = self.headers.get('Cookie')
-        if cookie != None:
-            uid = cookie[cookie.index('=') + 1:]  # fetch uid from cookie
-        else:
-            uid = None
         path = self.path
-        return (uid, path)
+        if cookie != None:
+            # try to find uid index in cookie
+            # if r = -1 'uid=' doesn't exist, then uid = None
+            r = cookie.find("uid=")
+            if r != -1:
+                uid = cookie[r+4:]  # fetch uid from cookie
+                return uid, path
+        uid = None
+        return uid, path
 
     def parse(self, path: str) -> dict:
         """
@@ -45,6 +49,7 @@ class Request():
         except json.JSONDecodeError as e:
             log.error("'parse' Error while reading json file. Error'{e}'")
             raise ParseErorr("Error while reading json file. Error'{e}'")
+
         # Validation of JSON file fields
         try:
             error = schema.json_validate(body, path)
