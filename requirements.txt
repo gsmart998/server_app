@@ -1,3 +1,4 @@
+asn1crypto==1.5.1
 attrs==23.1.0
 distlib==0.3.7
 dnspython==2.4.2
@@ -8,7 +9,12 @@ httpserver==1.1.0
 idna==3.4
 jsonschema==4.19.1
 jsonschema-specifications==2023.7.1
+pg8000==1.30.3
 platformdirs==3.10.0
+python-dateutil==2.8.2
 python-dotenv==1.0.0
 referencing==0.30.2
 rpds-py==0.10.3
+scramp==1.4.4
+six==1.16.0
+typing_extensions==4.8.0
