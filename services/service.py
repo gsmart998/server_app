@@ -85,10 +85,8 @@ class Service:
             todo = todos[i]
             res = {sample: todo for sample, todo in zip(sample, todo)}
             todos_list.append(res)
-        todos_json = json.dumps(todos_list)
-        print(type(todos_json))
-
-        return todos_json
+        # todos_json = json.dumps(todos_list)
+        return todos_list
 
     def create_todo(todo: dict, user_id: str):
         """Recive new todo as dict and user id. Add it to DB.

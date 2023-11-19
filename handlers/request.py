@@ -63,12 +63,22 @@ class Request():
 
         return body
 
-    def respond(self, code: int, json: str, cookie: str = None):
+    def respond(self, code: int, text: str, cookie: str = None):
         """
         Respond method takes as input a response code, a json file,
         and optionally a cookie, and sends the generated data in
         response to request.
         """
+        json_ok = {
+            "status": "Ok",
+            "message": text
+        }
+        json_err = {
+            "status": "Error",
+            "error_code": code,
+            "message": text
+        }
+
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         if cookie != None:
@@ -79,5 +89,11 @@ class Request():
 
             self.send_header("Set-Cookie", new_cookie.output(header=''))
         self.end_headers()
-        self.wfile.write(bytes(json, "UTF-8"))
+
+        if code == 200:
+            respond = json.dumps(json_ok)
+        else:
+            respond = json.dumps(json_err)
+
+        self.wfile.write(bytes(respond, "UTF-8"))
         log.info(f"Respdond sent with code: '{code}'.")

@@ -79,7 +79,7 @@ class Handlers(Request):
                         self, 503, "Sql query execution error. Try again later.")
                     return
                 
-                Request.respond(self, 200, "json OK", my_cookie.uid)
+                Request.respond(self, 200, "User has been authorized.", my_cookie.uid)
                 log.info("User has been authorized.")
 
             except ParseErorr:
@@ -114,7 +114,7 @@ class Handlers(Request):
                     return
                 new_todo = Request.parse(self, my_cookie.path)
                 Service.create_todo(new_todo, my_cookie.user_id)
-                Request.respond(self, 200, "Task created JSON.")
+                Request.respond(self, 200, "New todo has been created.")
                 log.info("New todo has been created.")
             except ParseErorr:
                 Request.respond(
@@ -137,7 +137,8 @@ class Handlers(Request):
                 return
             update_todo = Request.parse(self, my_cookie.path)
             Service.update_todo(update_todo, my_cookie.user_id)
-            Request.respond(self, 200, "Task updated JSON.")
+            Request.respond(self, 200, "Todo has been updated.")
+            log.info("Todo has been updated.")
 
         except ParseErorr:
             Request.respond(
