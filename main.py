@@ -1,4 +1,3 @@
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import os
 
@@ -6,6 +5,7 @@ from dotenv import load_dotenv
 
 from database.db_init import QueryError, init_tables
 from utils.cookie import MyCookie
+from utils.host_validate import is_fqdn
 from handlers.request import Request, ParseErorr
 from logs.my_logging import log
 from services.check_session import check_session
@@ -185,14 +185,26 @@ class MyServer(Handlers, BaseHTTPRequestHandler):
 
 
 
+
 if __name__ == "__main__":
     try:
         load_dotenv()
         PORT = int(os.environ["PORT"])
         HOST = os.environ["HOST"]
+
+        # validate env data
+        if  0 <= PORT <= 65535 and is_fqdn(HOST):
+            log.info("Use HOST and PORT data from .ENV file.")
+
+        else:
+            # if ENV data incorrect - use default values
+            log.error(".ENV data is incorrect, use default HOST and PORT.")
+            PORT = 8000
+            HOST = "127.0.0.1"
+        
         server = HTTPServer((HOST, PORT), MyServer)
-        print(f"Server now running on port: {PORT} ...")
-        log.info("Server now running...")
+        print(f"Server now running on: {HOST}:{PORT}...")
+        log.info(f"Server now running on: {HOST}:{PORT}...")
         server.serve_forever()
 
     except KeyboardInterrupt:
