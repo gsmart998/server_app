@@ -6,175 +6,53 @@ from dotenv import load_dotenv
 from database.db_init import QueryError, init_tables
 from utils.cookie import MyCookie
 from utils.host_validate import is_fqdn
-from handlers.request import Request, ParseErorr
+from handlers.request import Request
+from handlers.handlers import Get, Post, Put, Delete
 from logs.my_logging import log
 from services.check_session import check_session
-from services.service import Service
-from services.my_errors import MyErrors as err
 
 
-class Handlers(Request):
+class Handlers(Request, BaseHTTPRequestHandler):
     """HTTP Handlers"""
 
-    def do_GET(self):
-        log.info("GET request '/todos' recived.")
+    def main(self, req):
         my_cookie = MyCookie()
-        my_cookie.uid, my_cookie.path = Request.read(self)
+        my_cookie.uid = Request.read(self)
+        my_cookie.path = self.path
+        path = my_cookie.path
+        log.info(f"'{req}{path}' request recived.")
 
-        if my_cookie.path != "/todos":
+        # check valid path in routes
+        if path not in routes[req].keys():
             log.error("'do_GET' Wrong '/path'.")
             Request.respond(self, 404, "Wrong '/path'.")
             return
-        
-        try:
+        route = routes[req][path]
+
+        # check if authorization is required
+        if route["auth_check"]:
             result = check_session(my_cookie)
             if result == False:
                 Request.respond(self, 401, "Auth error.")
                 return
-            
-            todos = Service.get_todos(my_cookie.user_id)
-            Request.respond(self, 200, todos)
-            
-        except err.SqlQueryExecError:
-            Request.respond(self, 503, "Sql query execution error. Try again later.")
+
+        route["handler"](self, my_cookie)
+
+    def do_GET(self):
+        req = "Get"
+        Handlers.main(self, req)
 
     def do_POST(self):
-        """/register, /login, /logout, /new """
-
-        log.info("POST request recived.")
-        my_cookie = MyCookie()
-        my_cookie.uid, my_cookie.path = Request.read(self)
-
-        if my_cookie.path == "/register":
-            log.info("Request '/register'.")
-            try:
-                user_data = Request.parse(self, my_cookie.path)
-                Service.register_user(user_data)
-                Request.respond(self, 200, f"User '{
-                                user_data["login"]}' successfully registered.")
-                log.info(f"New user: '{
-                         user_data["login"]}' successfully registered.")
-
-            except ParseErorr:
-                Request.respond(
-                    self, 400, "Error occurred while reading json file!")
-            except err.EmailValidationError:
-                Request.respond(
-                    self, 400, "Error, email is not valid!")
-            except err.UserAlreadyExistsError:
-                Request.respond(
-                    self, 400, "Error, user with the requested data already exists!")
-            except err.SqlQueryExecError:
-                Request.respond(
-                        self, 503, "Sql query execution error. Try again later.")
-
-        if my_cookie.path == "/login":
-            log.info("Request '/login'.")
-            try:
-                user_data = Request.parse(self, my_cookie.path)
-                my_cookie.user_id = Service.login_user(user_data)
-                error = my_cookie.new_uid()
-                if error != None:
-                    Request.respond(
-                        self, 503, "Sql query execution error. Try again later.")
-                    return
-                
-                Request.respond(self, 200, "User has been authorized.", my_cookie.uid)
-                log.info("User has been authorized.")
-
-            except ParseErorr:
-                Request.respond(
-                    self, 400, "Error occurred while reading json file!")
-            except (err.UserNotFounError, err.IncorrectPasswordError):
-                Request.respond(
-                    self, 400, "Error, incorrect login or password entered!")
-            except err.SqlQueryExecError:
-                Request.respond(
-                        self, 503, "Sql query execution error. Try again later.")
-
-        if my_cookie.path == "/logout":
-            log.info("Requeset '/logout'.")
-            try:
-                if check_session(my_cookie) == False:
-                    Request.respond(self, 401, "Auth error.")
-                    return
-                Service.logout_user(my_cookie.uid)
-                Request.respond(self, 200, "User logged out.")
-                log.info(
-                    f"Session '{my_cookie.uid}' ended. User has logged out.")
-            except err.SqlQueryExecError:
-                Request.respond(
-                    self, 503, "Sql query execution error. Try again later.")
-                
-        if my_cookie.path == "/new":
-            log.info("Request '/new'.")
-            try:
-                if check_session(my_cookie) == False:
-                    Request.respond(self, 401, "Auth error.")
-                    return
-                new_todo = Request.parse(self, my_cookie.path)
-                Service.create_todo(new_todo, my_cookie.user_id)
-                Request.respond(self, 200, "New todo has been created.")
-                log.info("New todo has been created.")
-            except ParseErorr:
-                Request.respond(
-                    self, 400, "Error occurred while reading json file!")
-            except err.SqlQueryExecError:
-                Request.respond(
-                    self, 503, "Sql query execution error. Try again later.")
+        req = "Post"
+        Handlers.main(self, req)
 
     def do_PUT(self):
-        log.info("PUT request recived.")
-        my_cookie = MyCookie()
-        my_cookie.uid, my_cookie.path = Request.read(self)
-        if my_cookie.path != "/todo":
-            log.error("Wrong '/path'.")
-            Request.respond(self, 404, "Wrong '/path'.")
-            return
-        try:
-            if check_session(my_cookie) == False:
-                Request.respond(self, 401, "Auth error.")
-                return
-            update_todo = Request.parse(self, my_cookie.path)
-            Service.update_todo(update_todo, my_cookie.user_id)
-            Request.respond(self, 200, "Todo has been updated.")
-            log.info("Todo has been updated.")
-
-        except ParseErorr:
-            Request.respond(
-                self, 400, "Error occurred while reading json file!")
-        except err.SqlQueryExecError:
-            Request.respond(
-                self, 503, "Sql query execution error. Try again later.")
-        except err.FetchTodosError:
-            Request.respond(
-                self, 400, "Todo does not exists, or user doesn't have access rights.")
+        req = "Put"
+        Handlers.main(self, req)
 
     def do_DELETE(self):
-        log.info("DELETE request recived.")
-        my_cookie = MyCookie()
-        my_cookie.uid, my_cookie.path = Request.read(self)
-        if my_cookie.path != "/delete":
-            log.error("'do_DELETE' Wrong '/path'.")
-            Request.respond(self, 404, "Wrong '/path'.")
-            return
-        try:
-            if check_session(my_cookie) == False:
-                Request.respond(self, 401, "Auth error.")
-                return
-            todo = Request.parse(self, my_cookie.path)
-            Service.delete_todo(todo, my_cookie.user_id)
-            Request.respond(self, 200, "Task has been deleted.")
-
-        except ParseErorr:
-            Request.respond(
-                self, 400, "Error occurred while reading json file!")
-        except err.SqlQueryExecError:
-            Request.respond(
-                self, 503, "Sql query execution error. Try again later.")
-        except err.FetchTodosError:
-            Request.respond(
-                self, 400, "Todo does not exists, or user doesn't have access rights.")
+        req = "Delete"
+        Handlers.main(self, req)
 
 
 class MyServer(Handlers, BaseHTTPRequestHandler):
@@ -184,6 +62,16 @@ class MyServer(Handlers, BaseHTTPRequestHandler):
         print("Something gone wrong while create DB tables")
 
 
+routes = {
+    "Get": {
+        "/todos": {"handler": Get.todos, "auth_check": True}},
+    "Post": {
+        "/register": {"handler": Post.register, "auth_check": False},
+        "/login": {"handler": Post.login, "auth_check": False},
+        "/new": {"handler": Post.new, "auth_check": True},
+        "/logout": {"handler": Post.logout, "auth_check": True}},
+    "Put": {"/todo": {"handler": Put.todo, "auth_check": True}},
+    "Delete": {"/delete": {"handler": Delete.delete, "auth_check": True}}}
 
 
 if __name__ == "__main__":
@@ -193,7 +81,7 @@ if __name__ == "__main__":
         HOST = os.environ["HOST"]
 
         # validate env data
-        if  0 <= PORT <= 65535 and is_fqdn(HOST):
+        if 0 <= PORT <= 65535 and is_fqdn(HOST):
             log.info("Use HOST and PORT data from .ENV file.")
 
         else:
@@ -201,7 +89,7 @@ if __name__ == "__main__":
             log.error(".ENV data is incorrect, use default HOST and PORT.")
             PORT = 8000
             HOST = "127.0.0.1"
-        
+
         server = HTTPServer((HOST, PORT), MyServer)
         print(f"Server now running on: {HOST}:{PORT}...")
         log.info(f"Server now running on: {HOST}:{PORT}...")
@@ -211,4 +99,3 @@ if __name__ == "__main__":
         server.shutdown()
         print("\nServer shutdown...")
         log.info("Server shutdown...")
-

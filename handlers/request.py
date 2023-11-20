@@ -16,22 +16,21 @@ class Request():
     Reads, parses, and allows you to generate a response.
     """
 
-    def read(self) -> tuple:
+    def read(self) -> str | None:
         """
-        Read recived request for path '/some_path' and
-        cookie uid. return (uid, path)
+        Read recived request for cookie uid. return uid.
+        If cookie doesn't contain uid - return None.
         """
         cookie = self.headers.get('Cookie')
-        path = self.path
         if cookie != None:
             # try to find uid index in cookie
             # if r = -1 'uid=' doesn't exist, then uid = None
             r = cookie.find("uid=")
             if r != -1:
                 uid = cookie[r+4:]  # fetch uid from cookie
-                return uid, path
+                return uid
         uid = None
-        return uid, path
+        return uid
 
     def parse(self, path: str) -> dict:
         """
@@ -96,4 +95,4 @@ class Request():
             respond = json.dumps(json_err)
 
         self.wfile.write(bytes(respond, "UTF-8"))
-        log.info(f"Respdond sent with code: '{code}'.")
+        log.info(f"Respond sent with code: '{code}'.")

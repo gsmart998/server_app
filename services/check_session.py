@@ -15,7 +15,6 @@ def check_session(cookie) -> bool:
     Return True if session OK, else - False and error.
     """
     if cookie.uid == None:
-        print("Error, can't check session without session_uid.")
         log.error(
             "'check_session' Error, can't check\
                     session without session_uid.")
