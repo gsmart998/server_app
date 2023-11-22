@@ -1,7 +1,7 @@
 version: "3"
 services:
   app:
-    build: ../todos_python
+    build: ..
     restart: on-failure
     environment:
       PORT: 8001
