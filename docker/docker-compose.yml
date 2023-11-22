@@ -1,0 +1,35 @@
+version: "3"
+services:
+  app:
+    build: ../todos_python
+    restart: on-failure
+    environment:
+      PORT: 8001
+      HOST: "0.0.0.0"
+      USERNAME: "admin"
+      PASSWORD: "password"
+      DB_HOST: host.docker.internal
+      DB_PORT: "5432"
+      DATABASE: "pg_db"
+    command: python main.py
+    ports:
+      - "8080:8001"
+    depends_on:
+      - postgres
+  
+  postgres:
+    image: postgres:13.3
+    restart: always
+    environment:
+      POSTGRES_DB: "pg_db"
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "password"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+
+volumes:
+  db_data:

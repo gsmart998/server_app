@@ -56,10 +56,12 @@ class Handlers(Request, BaseHTTPRequestHandler):
 
 
 class MyServer(Handlers, BaseHTTPRequestHandler):
+    pass
     try:
         init_tables()
     except QueryError:
         print("Something gone wrong while create DB tables")
+        init_tables()
 
 
 routes = {
