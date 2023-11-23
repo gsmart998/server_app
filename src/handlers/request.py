@@ -1,7 +1,7 @@
 from http import cookies
 import json
 
-import handlers.schema_template as schema
+import utils.schema_template as schema
 from logs.my_logging import log
 from jsonschema.exceptions import ValidationError
 

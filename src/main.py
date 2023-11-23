@@ -1,11 +1,9 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import os
 
-from dotenv import load_dotenv
-
 from database.db_init import QueryError, init_tables
 from utils.cookie import MyCookie
-from utils.host_validate import is_fqdn
+from utils.env_validate import EnvValidate
 from handlers.request import Request
 from handlers.handlers import Get, Post, Put, Delete
 from logs.my_logging import log
@@ -61,7 +59,6 @@ class MyServer(Handlers, BaseHTTPRequestHandler):
         init_tables()
     except QueryError:
         print("Something gone wrong while create DB tables")
-        init_tables()
 
 
 routes = {
@@ -78,26 +75,18 @@ routes = {
 
 if __name__ == "__main__":
     try:
-        load_dotenv()
         PORT = int(os.environ["PORT"])
         HOST = os.environ["HOST"]
 
         # validate env data
-        if 0 <= PORT <= 65535 and is_fqdn(HOST):
-            log.info("Use HOST and PORT data from .ENV file.")
-
-        else:
-            # if ENV data incorrect - use default values
-            log.error(".ENV data is incorrect, use default HOST and PORT.")
-            PORT = 8000
-            HOST = "127.0.0.1"
+        EnvValidate.host_validate(HOST, PORT)
 
         server = HTTPServer((HOST, PORT), MyServer)
         print(f"Server now running on: {HOST}:{PORT}...")
         log.info(f"Server now running on: {HOST}:{PORT}...")
         server.serve_forever()
 
-    except KeyboardInterrupt:
-        server.shutdown()
+    except (KeyboardInterrupt, EnvironmentError):
         print("\nServer shutdown...")
-        log.info("Server shutdown...")
+        log.error("Server shutdown...")
+        server.shutdown()

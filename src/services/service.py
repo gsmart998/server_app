@@ -1,12 +1,12 @@
 from datetime import datetime
-import json
+
+from email_validator import validate_email, EmailNotValidError
 
 from database.db_tasks import DbTasks
 from database.db_sessions import DbSessions
 from database.db_users import DbUsers
-from email_validator import validate_email, EmailNotValidError
 from logs.my_logging import log
-from utils.pass_handler import Password
+from utils.pass_validate import Password
 from services.my_errors import MyErrors as err
 
 
@@ -65,9 +65,9 @@ class Service:
         log.info("'login_user' Password correct.")
         return user_id
 
-    def get_todos(user_id: int) -> str:
+    def get_todos(user_id: int) -> dict:
         """
-        Recive user_id, return user todos as json.
+        Recive user_id, return user todos as dict.
         Or empty no_todos if they don't exist.
         """
         todos, error = DbTasks.get_tasks(user_id)
@@ -85,7 +85,6 @@ class Service:
             todo = todos[i]
             res = {sample: todo for sample, todo in zip(sample, todo)}
             todos_list.append(res)
-        # todos_json = json.dumps(todos_list)
         return todos_list
 
     def create_todo(todo: dict, user_id: str):

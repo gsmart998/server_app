@@ -1,7 +1,5 @@
-.venv
-.env
-sqlite_base.db
-app.log
 __pycache__
+.venv
 .vscode
-
+db_data
+app.log
