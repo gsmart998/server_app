@@ -29,7 +29,6 @@ def try_connect_db(attempts: int):
                 return None, Error
             log.error("Connection to DB failed, try again...")
             time.sleep(0.5)
-
             continue
 
 

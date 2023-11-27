@@ -2,9 +2,26 @@ import logging
 
 log = logging
 
-log.basicConfig(filename='logs/app.log', filemode='w',
-                format='%(levelname)s - %(asctime)s - %(message)s', level=logging.INFO)
-log.basicConfig(filename='logs/app.log', filemode='w',
-                format='%(levelname)s - %(asctime)s - %(message)s', level=logging.ERROR)
-log.basicConfig(filename='logs/app.log', filemode='w',
-                format='%(levelname)s - %(asctime)s - %(message)s', level=logging.CRITICAL)
+log.basicConfig(
+    format='%(levelname)s - %(asctime)s - %(message)s',
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler('logs/app.log'),
+        logging.StreamHandler()
+    ])
+
+log.basicConfig(
+    format='%(levelname)s - %(asctime)s - %(message)s',
+    level=logging.ERROR,
+    handlers=[
+        logging.FileHandler('logs/app.log'),
+        logging.StreamHandler()
+    ])
+
+log.basicConfig(
+    format='%(levelname)s - %(asctime)s - %(message)s',
+    level=logging.CRITICAL,
+    handlers=[
+        logging.FileHandler('logs/app.log'),
+        logging.StreamHandler()
+    ])
