@@ -1,25 +1,21 @@
-# Todos_python
+# todos_python
 
 ## About
-This is a small task list project without a web interface. All communication is carried out using http requests.
+This is a small todo list project without a web interface. All communication is carried out using JSON via HTTP requests. PostgreSQL database used. For convenience, the project uses environment variables. To authorize users, cookies with the session UID are used, which are stored in the DB. User password stored in the DB hashed with salt.
+Docker is used to run the project in separate containers.
 
 ## Installation
-Copy the repository, then in the terminal, being in the folder with the project, use the command to install dependencies: 
+Clone the repository, then in the terminal, being in the folder with the project, use the docker command to start service: 
 ```
-pip install -r requirements.txt
-```
-
-After that, start the server with the command:
-```
-python3.12 main.py
+docker-compose up -d
 ```
 
-After launch, a message should appear in the terminal:
+After launch, a message should appear in the terminal (into container):
 ```
-Server now running on port: 8000 ...
+Server now running on port: 8001 ...
 ```
 
-*Hint: address, port, and path with the database name can be changed in the **.env** file.*
+*Hint: address, port and DB user data can be changed in the **docker-compose.yml** file.*
 
 ## Usage
 
@@ -27,7 +23,7 @@ Server now running on port: 8000 ...
 For register a new user, you need to send a POST request with attached JSON.
 
     Request type: POST
-    URL: localhost:8000/register
+    URL: localhost:8081/register
 
 ```json
 {
@@ -42,7 +38,7 @@ For register a new user, you need to send a POST request with attached JSON.
 To authorize, you must use the data specified during registration.
 
     Request type: POST
-    URL: localhost:8000/login
+    URL: localhost:8081/login
 ```json
 {
     "login": "admin",
@@ -54,7 +50,7 @@ To authorize, you must use the data specified during registration.
 To create a new todo you must send the following request.
 
     Request type: POST
-    URL: localhost:8000/new
+    URL: localhost:8081/new
 ```json
 {
     "task": "Test task #1"
@@ -65,14 +61,14 @@ To create a new todo you must send the following request.
 To get all created todos you need to run the following query. JSON is not needed in this request.
 
     Request type: GET
-    URL: localhost:8000/todos
+    URL: localhost:8081/todos
 
 
 ### Update todo
-To change a previously created todo, you must send the following request with todo id and updated data. The *"completed"* section in the JSON indicates the status of the todo. 0 - not completed, 1 - completed.
+To change a previously created todo, you must send the following request with todo id and updated data.
 
     Request type: PUT
-    URL: localhost:8000/todo
+    URL: localhost:8081/todo
 ```json
 {
     "id": 1,
@@ -85,7 +81,7 @@ To change a previously created todo, you must send the following request with to
 To delete previously created notes, you must send the following request indicating the todo id.
 
     Request type: DELETE
-    URL: localhost:8000/delete
+    URL: localhost:8081/delete
 ```json
 {
     "id": 16
@@ -96,4 +92,4 @@ To delete previously created notes, you must send the following request indicati
 To log out of your account, you must submit the following request. JSON is not needed in this request.
 
     Request type: POST
-    URL: localhost:8000/logout
+    URL: localhost:8081/logout
