@@ -11,7 +11,9 @@ from services.check_session import check_session
 
 
 class Handlers(Request, BaseHTTPRequestHandler):
-    """HTTP Handlers"""
+    """
+    HTTP Handlers
+    """
 
     def main(self, method):
         routes = Routes()
