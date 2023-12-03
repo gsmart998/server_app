@@ -12,7 +12,7 @@ services:
       DATABASE: "pg_db"
     command: python main.py
     ports:
-      - "8081:8001"
+      - "8080:8001"
     depends_on:
       - postgres
   

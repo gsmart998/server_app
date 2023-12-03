@@ -23,9 +23,9 @@ class Post:
             user_data = Request.parse(self, my_cookie.path)
             Service.register_user(user_data)
             Request.respond(self, 200, f"User '{
-                            user_data["login"]}' successfully registered.")
+                            user_data['login']}' successfully registered.")
             log.info(f"New user: '{
-                        user_data["login"]}' successfully registered.")
+                user_data['login']}' successfully registered.")
 
         except ParseErorr:
             Request.respond(
@@ -38,8 +38,8 @@ class Post:
                 self, 400, "Error, user with the requested data already exists!")
         except err.SqlQueryExecError:
             Request.respond(
-                    self, 503, "Sql query execution error. Try again later.")
-            
+                self, 503, "Sql query execution error. Try again later.")
+
     def login(self, my_cookie):
         try:
             user_data = Request.parse(self, my_cookie.path)
@@ -49,8 +49,9 @@ class Post:
                 Request.respond(
                     self, 503, "Sql query execution error. Try again later.")
                 return
-            
-            Request.respond(self, 200, "User has been authorized.", my_cookie.uid)
+
+            Request.respond(
+                self, 200, "User has been authorized.", my_cookie.uid)
             log.info("User has been authorized.")
 
         except ParseErorr:
@@ -61,22 +62,22 @@ class Post:
                 self, 400, "Error, incorrect login or password entered!")
         except err.SqlQueryExecError:
             Request.respond(
-                    self, 503, "Sql query execution error. Try again later.")
-            
-    def new(self, my_cookie):
-            try:
-                new_todo = Request.parse(self, my_cookie.path)
-                Service.create_todo(new_todo, my_cookie.user_id)
-                Request.respond(self, 200, "New todo has been created.")
-                log.info("New todo has been created.")
+                self, 503, "Sql query execution error. Try again later.")
 
-            except ParseErorr:
-                Request.respond(
-                    self, 400, "Error occurred while reading json file!")
-            except err.SqlQueryExecError:
-                Request.respond(
-                    self, 503, "Sql query execution error. Try again later.")
-                
+    def new(self, my_cookie):
+        try:
+            new_todo = Request.parse(self, my_cookie.path)
+            Service.create_todo(new_todo, my_cookie.user_id)
+            Request.respond(self, 200, "New todo has been created.")
+            log.info("New todo has been created.")
+
+        except ParseErorr:
+            Request.respond(
+                self, 400, "Error occurred while reading json file!")
+        except err.SqlQueryExecError:
+            Request.respond(
+                self, 503, "Sql query execution error. Try again later.")
+
     def logout(self, my_cookie):
         try:
             Service.logout_user(my_cookie.uid)
@@ -86,7 +87,7 @@ class Post:
         except err.SqlQueryExecError:
             Request.respond(
                 self, 503, "Sql query execution error. Try again later.")
-            
+
 
 class Put:
     def todo(self, my_cookie):
@@ -106,7 +107,7 @@ class Put:
             Request.respond(
                 self, 400, "Todo does not exists, or user doesn't have access rights.")
 
-  
+
 class Delete:
     def delete(self, my_cookie):
         try:

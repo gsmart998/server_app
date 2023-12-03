@@ -16,7 +16,7 @@ class Request():
     Reads, parses, and allows you to generate a response.
     """
 
-    def read(self) -> str | None:
+    def read(self) -> str:
         """
         Read recived request for cookie uid. return uid.
         If cookie doesn't contain uid - return None.
