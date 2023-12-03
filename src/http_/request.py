@@ -1,7 +1,8 @@
 from http import cookies
 import json
 
-import utils.schema_template as schema
+from jsonschema import ValidationError, validate
+
 from logs.my_logging import log
 from jsonschema.exceptions import ValidationError
 
@@ -32,9 +33,9 @@ class Request():
         uid = None
         return uid
 
-    def parse(self, path: str) -> dict:
+    def parse(self, template: dict) -> dict:
         """
-        Parse method receive a json and path string,
+        Parse method receive a json and shema template,
         check it for correctness and convert it into a
         dictionary, then return body as dict.
         """
@@ -51,10 +52,7 @@ class Request():
 
         # Validation of JSON file fields
         try:
-            error = schema.json_validate(body, path)
-            if error != None:
-                log.error(error)
-                raise ParseErorr(f"Json is not valid!")
+            validate(body, template)
 
         except ValidationError as e:
             log.error(f"'parse' Json is not valid! Error'{e}'")

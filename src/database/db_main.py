@@ -1,17 +1,17 @@
-import os
 import time
 
 import pg8000.dbapi
 from pg8000.dbapi import Error
 
+import settings
 from logs.my_logging import log
 
 
-USERNAME = os.environ["USERNAME"]
-PASSWORD = os.environ["PASSWORD"]
-DB_HOST = os.environ["DB_HOST"]
-DB_PORT = os.environ["DB_PORT"]
-DATABASE = os.environ["DATABASE"]
+USERNAME = settings.USERNAME
+PASSWORD = settings.PASSWORD
+DB_HOST = settings.DB_HOST
+DB_PORT = settings.DB_PORT
+DATABASE = settings.DATABASE
 
 
 def try_connect_db(attempts: int):
