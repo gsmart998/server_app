@@ -8,8 +8,7 @@ from services.session_service import SessionService
 class Put:
     def todo(self, my_cookie):
         # check authorization
-        result = SessionService.check_session(my_cookie)
-        if result == False:
+        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:

@@ -17,21 +17,23 @@ class Request():
     Reads, parses, and allows you to generate a response.
     """
 
-    def read(self) -> str:
+    def read(self) -> tuple:
         """
-        Read recived request for cookie uid. return uid.
-        If cookie doesn't contain uid - return None.
+        Read recived request for cookie uid. return uid, user_id.
+        If cookie doesn't contain uid and user_id - return None, None
         """
         cookie = self.headers.get('Cookie')
         if cookie != None:
             # try to find uid index in cookie
             # if r = -1 'uid=' doesn't exist, then uid = None
             r = cookie.find("uid=")
-            if r != -1:
-                uid = cookie[r+4:]  # fetch uid from cookie
-                return uid
-        uid = None
-        return uid
+            r2 = cookie.find(":id=")
+            if r != -1 and r2 != -1:
+                uid = cookie[r+5:r2]  # fetch uid from cookie
+                user_id = cookie[r2 + 4:-1]  # fetch user id from cookie
+                return uid, user_id
+
+        return None, None
 
     def parse(self, template: dict) -> dict:
         """
@@ -60,10 +62,10 @@ class Request():
 
         return body
 
-    def respond(self, code: int, text: str, cookie: str = None):
+    def respond(self, code: int, text: str, uid: str = None, user_id: int = None):
         """
         Respond method takes as input a response code, a json file,
-        and optionally a cookie, and sends the generated data in
+        and optionally a uid and user id, and sends the generated data in
         response to request.
         """
         json_ok = {
@@ -78,9 +80,9 @@ class Request():
 
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
-        if cookie != None:
+        if uid != None and user_id != None:
             new_cookie = cookies.SimpleCookie()
-            new_cookie["uid"] = cookie
+            new_cookie["uid"] = f"{uid}:id={user_id}"
             new_cookie["uid"]["path"] = "/"
             new_cookie["uid"]["HttpOnly"] = True
 

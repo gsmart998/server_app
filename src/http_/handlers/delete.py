@@ -8,14 +8,10 @@ from utils.my_errors import MyErrors as err
 class Delete:
     def delete(self, my_cookie):
         # check authorization
-        result = SessionService.check_session(my_cookie)
-        if result == False:
+        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
-            if SessionService.check_session(my_cookie) == False:
-                Request.respond(self, 401, "Auth error.")
-                return
             todo = Request.parse(self, delete_todo_schema)
             TodoService.delete_todo(todo, my_cookie.user_id)
             Request.respond(self, 200, "Task has been deleted.")

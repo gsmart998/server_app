@@ -2,7 +2,6 @@ from datetime import datetime
 
 from email_validator import validate_email, EmailNotValidError
 
-from database.db_sessions import DbSessions
 from database.db_users import DbUsers
 from logs.my_logging import log
 from utils.pass_validate import Password
@@ -47,7 +46,7 @@ class UserService:
         Return user_id: int
         """
         # Try to check user login in DB and recive password.
-        data, error = DbSessions.get_password(user_data)
+        data, error = DbUsers.get_password(user_data)
         if error != None:
             raise err.SqlQueryExecError("'login_user' SQL get password error.")
         if data == None:
@@ -63,11 +62,3 @@ class UserService:
 
         log.info("'login_user' Password correct.")
         return user_id
-
-    def logout_user(session_id: str):
-        """Check session_id in DB and marks it with current datetime (expired)."""
-
-        new_expire = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
-        error = DbSessions.update_session(new_expire, session_id)
-        if error != None:
-            raise err.SqlQueryExecError("SQL update session error.")

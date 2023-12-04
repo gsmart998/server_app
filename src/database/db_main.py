@@ -12,6 +12,7 @@ PASSWORD = settings.PASSWORD
 DB_HOST = settings.DB_HOST
 DB_PORT = settings.DB_PORT
 DATABASE = settings.DATABASE
+DB_CONNECT_ATTEMPTS = settings.DB_CONNECT_ATTEMPTS
 
 
 def try_connect_db(attempts: int):
@@ -38,7 +39,7 @@ def query(query_type: str, template: str, data: tuple = None):
     """
     connection = None
     try:
-        connection, error = try_connect_db(15)
+        connection, error = try_connect_db(DB_CONNECT_ATTEMPTS)
         if error != None:
             return None, error
 

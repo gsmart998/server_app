@@ -31,14 +31,11 @@ class Post:
         try:
             user_data = Request.parse(self, login_schema)
             my_cookie.user_id = UserService.login_user(user_data)
-            error = my_cookie.new_uid()
-            if error != None:
-                Request.respond(
-                    self, 503, "Sql query execution error. Try again later.")
-                return
+            # use session service to create new session in redis_db
+            my_cookie.uid = SessionService.new_session(my_cookie.user_id)
 
             Request.respond(
-                self, 200, "User has been authorized.", my_cookie.uid)
+                self, 200, "User has been authorized.", my_cookie.uid, my_cookie.user_id)
             log.info("User has been authorized.")
 
         except ParseErorr:
@@ -54,8 +51,7 @@ class Post:
     def new(self, my_cookie):
         '''Method for creating a new todo'''
         # check authorization
-        result = SessionService.check_session(my_cookie)
-        if result == False:
+        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
@@ -73,15 +69,17 @@ class Post:
 
     def logout(self, my_cookie):
         # check authorization
-        result = SessionService.check_session(my_cookie)
-        if result == False:
+        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
-            UserService.logout_user(my_cookie.uid)
+            SessionService.end_session(my_cookie.user_id)
             Request.respond(self, 200, "User logged out.")
             log.info(
                 f"Session '{my_cookie.uid}' ended. User has logged out.")
+            #
+            # Handle redis db error !
+            #
         except err.SqlQueryExecError:
             Request.respond(
                 self, 503, "Sql query execution error. Try again later.")

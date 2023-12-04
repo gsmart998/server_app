@@ -22,7 +22,7 @@ class Handlers(BaseHTTPRequestHandler):
             return
 
         my_cookie = MyCookie()
-        my_cookie.uid = Request.read(self)
+        my_cookie.uid, my_cookie.user_id = Request.read(self)
         my_cookie.path = path
 
         # get specific handler from routes list

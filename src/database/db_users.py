@@ -35,6 +35,19 @@ class DbUsers:
             log.info("'Check_user' User not found.")
             return None, None
 
+    def get_password(user_data: dict):
+        """
+        Recive user login. user_data: (ud["login"])
+        Return user (password, id) or None.
+        """
+        user = (user_data["login"],)
+        data, error = query("fetch_one", get_password_template, user)
+        if error != None:
+            return None, error
+        # return hashed_password, user_id
+        # result = (data[0], data[1])
+        return data, None
+
 
 # Templates:
 #
@@ -50,4 +63,10 @@ VALUES
 # Query for user search
 check_user_template = """
 SELECT * FROM users WHERE login = %s OR email = %s;
+"""
+
+
+# Query for user search
+get_password_template = """
+SELECT password, id FROM users WHERE login = %s;
 """

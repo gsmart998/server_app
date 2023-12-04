@@ -13,7 +13,6 @@ def init_tables():
     """
     _, error = query("init", create_users_table)
     _, error = query("init", create_tasks_table)
-    _, error = query("init", create_sessions_table)
     if error != None:
         log.error("Database initialization failed.")
         raise QueryError("Sql query error.")
@@ -38,16 +37,6 @@ CREATE TABLE IF NOT EXISTS tasks(
 id SERIAL PRIMARY KEY,
 task VARCHAR(200) NOT NULL,
 completed BOOLEAN NOT NULL,
-user_id INTEGER NOT NULL,
-FOREIGN KEY (user_id) REFERENCES users (id)
-);
-"""
-
-# Init table sessions
-create_sessions_table = """
-CREATE TABLE IF NOT EXISTS sessions(
-uid VARCHAR(50) PRIMARY KEY,
-expire TIMESTAMP NOT NULL,
 user_id INTEGER NOT NULL,
 FOREIGN KEY (user_id) REFERENCES users (id)
 );

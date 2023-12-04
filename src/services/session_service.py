@@ -1,43 +1,44 @@
-from database.db_sessions import DbSessions
+
+import redis
+import uuid
+
 from logs.my_logging import log
-
-from datetime import datetime
-
-
-class SqlQueryExecError(Exception):
-    pass
 
 
 class SessionService:
-    def check_session(cookie) -> bool:
+
+    def new_session(user_id: int) -> str:
         """
-        Check uid for relevance. Add user_id and expire_datetime to cookie.
-        Return True if session OK, else - False and error.
+        Takes user_id: int, generate new session UID.
+        Create new session in DB. Return session uid: str.
         """
-        if cookie.uid == None:
+        # Unique session ID
+        uid = str(uuid.uuid4())
+        # Add to redis DB new session
+        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r.set(user_id, uid)
+        log.info(f"New session '{uid}' created in redis.")
+        return uid
+
+    def check_redis_session(user_id: int, uid: str) -> bool:
+        """
+        Func for check active session in redis DB, search session by
+        user_id, then compare session uid from DB and from cookie.
+        """
+        if uid == None:
             log.error(
-                "'check_session' Error, can't check\
-                        session without session_uid.")
+                "'check_redis_session' Error, can't check session without any data.")
             return False
 
-        session_data, error = DbSessions.check_session(cookie.uid)
-        if error != None:
-            raise SqlQueryExecError("'check_session' SQL error.")
-
-        if session_data == None:
+        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        res = r.get(user_id)
+        if res != uid:
+            log.info("Session not found!")
             return False
+        log.info("Session found, auth - ok")
+        return True
 
-        _, expire, user_id = session_data
-
-        cookie.user_id = user_id
-        cookie.expire_datetime = expire
-
-        if expire < datetime.now():
-            log.info(f"Cookie with uid: {cookie.uid} is expired.")
-            cookie.expired = True
-            return False
-
-        else:
-            log.info("Cookie is ok.")
-            cookie.expired = False
-            return True
+    def end_session(user_id: int):
+        """Delete session in redis db with user_id key"""
+        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r.delete(user_id)

@@ -15,3 +15,6 @@ PASSWORD = os.environ["PASSWORD"]
 DB_HOST = os.environ["DB_HOST"]
 DB_PORT = os.environ["DB_PORT"]
 DATABASE = os.environ["DATABASE"]
+
+# number of attempts to connect to the PostgreSQL database
+DB_CONNECT_ATTEMPTS = int(os.environ["DB_CONNECT_ATTEMPTS"])
