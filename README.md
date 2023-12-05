@@ -1,7 +1,7 @@
 # todos_python
 
 ## About
-This is a small todo list project without a web interface. All communication is carried out using JSON via HTTP requests. PostgreSQL database used. For convenience, the project uses environment variables. To authorize users, cookies with the session UID are used, which are stored in the DB. User password stored in the DB hashed with salt.
+This is a small todo list project without a web interface. All communication is carried out using JSON via HTTP requests. PostgreSQL database used for main data, sessions data store in Redis. For convenience, the project uses environment variables. To authorize users, cookies with the session UID are used, which are stored in the Redis DB. User password stored in the DB hashed with salt.
 Docker is used to run the project in separate containers.
 
 ## Installation
@@ -9,13 +9,28 @@ Clone the repository, then in the terminal, being in the folder with the project
 ```
 docker-compose up -d
 ```
+3 containers must be running: Redis database, PostgreSQL database and the service of application itself.
 
 After launch, a message should appear in the terminal (into container):
 ```
-Server now running on port: 8001 ...
+Server now running on port: 8081 ...
 ```
 
 *Hint: address, port and DB user data can be changed in the **docker-compose.yml** file.*
+
+## Settings
+
+In file **/src/setting.py** you can configure additional parameters:
+
+```py
+# Number of attempts to connect to the PostgreSQL database
+DB_CONNECT_ATTEMPTS = 10
+```
+```py
+# TTL - time to live for session (in seconds)
+TTL = 3600
+```
+
 
 ## Usage
 

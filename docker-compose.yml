@@ -14,7 +14,7 @@ services:
       REDIS_HOST: host.docker.internal
     command: python main.py
     ports:
-      - "8080:8001"
+      - "8081:8001"
     depends_on:
       - postgres
       - redis
