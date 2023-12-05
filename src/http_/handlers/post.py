@@ -7,7 +7,7 @@ from services.session_service import SessionService
 
 
 class Post:
-    def register(self, my_cookie):
+    def register(self, uid, user_id):
         try:
             user_data = Request.parse(self, register_schema)
             UserService.register_user(user_data)
@@ -27,15 +27,15 @@ class Post:
             Request.respond(
                 self, 503, "Sql query execution error. Try again later.")
 
-    def login(self, my_cookie):
+    def login(self, uid, user_id):
         try:
             user_data = Request.parse(self, login_schema)
-            my_cookie.user_id = UserService.login_user(user_data)
+            user_id = UserService.login_user(user_data)
             # use session service to create new session in redis_db
-            my_cookie.uid = SessionService.new_session(my_cookie.user_id)
+            uid = SessionService.new_session(user_id)
 
             Request.respond(
-                self, 200, "User has been authorized.", my_cookie.uid, my_cookie.user_id)
+                self, 200, "User has been authorized.", uid, user_id)
             log.info("User has been authorized.")
 
         except ParseErorr:
@@ -47,16 +47,19 @@ class Post:
         except err.SqlQueryExecError:
             Request.respond(
                 self, 503, "Sql query execution error. Try again later.")
+        except err.RedisConnectionError:
+            Request.respond(
+                self, 503, "Internal error. Try again later.")
 
-    def new(self, my_cookie):
+    def new(self, uid, user_id):
         '''Method for creating a new todo'''
         # check authorization
-        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
+        if SessionService.check_redis_session(user_id, uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
             new_todo = Request.parse(self, new_todo_schema)
-            TodoService.create_todo(new_todo, my_cookie.user_id)
+            TodoService.create_todo(new_todo, user_id)
             Request.respond(self, 200, "New todo has been created.")
             log.info("New todo has been created.")
 
@@ -66,20 +69,24 @@ class Post:
         except err.SqlQueryExecError:
             Request.respond(
                 self, 503, "Sql query execution error. Try again later.")
+        except err.RedisConnectionError:
+            Request.respond(
+                self, 503, "Internal error. Try again later.")
 
-    def logout(self, my_cookie):
+    def logout(self, uid, user_id):
         # check authorization
-        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
+        if SessionService.check_redis_session(user_id, uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
-            SessionService.end_session(my_cookie.user_id)
+            SessionService.end_session(user_id)
             Request.respond(self, 200, "User logged out.")
             log.info(
-                f"Session '{my_cookie.uid}' ended. User has logged out.")
-            #
-            # Handle redis db error !
-            #
+                f"Session '{uid}' ended. User has logged out.")
+
+        except err.RedisConnectionError:
+            Request.respond(
+                self, 503, "Internal error. Try again later.")
         except err.SqlQueryExecError:
             Request.respond(
                 self, 503, "Sql query execution error. Try again later.")

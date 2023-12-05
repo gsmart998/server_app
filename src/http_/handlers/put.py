@@ -6,14 +6,14 @@ from services.session_service import SessionService
 
 
 class Put:
-    def todo(self, my_cookie):
+    def todo(self, uid, user_id):
         # check authorization
-        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
+        if SessionService.check_redis_session(user_id, uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
             update_todo = Request.parse(self, update_todo_schema)
-            TodoService.update_todo(update_todo, my_cookie.user_id)
+            TodoService.update_todo(update_todo, user_id)
             Request.respond(self, 200, "Todo has been updated.")
             log.info("Todo has been updated.")
 
@@ -26,6 +26,9 @@ class Put:
         except err.FetchTodosError:
             Request.respond(
                 self, 400, "Todo does not exists, or user doesn't have access rights.")
+        except err.RedisConnectionError:
+            Request.respond(
+                self, 503, "Internal error. Try again later.")
 
 
 # Template for Request.parse update todo

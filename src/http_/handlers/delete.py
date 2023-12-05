@@ -6,14 +6,14 @@ from utils.my_errors import MyErrors as err
 
 
 class Delete:
-    def delete(self, my_cookie):
+    def delete(self, uid, user_id):
         # check authorization
-        if SessionService.check_redis_session(my_cookie.user_id, my_cookie.uid) == False:
+        if SessionService.check_redis_session(user_id, uid) == False:
             Request.respond(self, 401, "Auth error.")
             return
         try:
             todo = Request.parse(self, delete_todo_schema)
-            TodoService.delete_todo(todo, my_cookie.user_id)
+            TodoService.delete_todo(todo, user_id)
             Request.respond(self, 200, "Task has been deleted.")
 
         except ParseErorr:
@@ -25,6 +25,9 @@ class Delete:
         except err.FetchTodosError:
             Request.respond(
                 self, 400, "Todo does not exists, or user doesn't have access rights.")
+        except err.RedisConnectionError:
+            Request.respond(
+                self, 503, "Internal error. Try again later.")
 
 
 # Template for Request.parse

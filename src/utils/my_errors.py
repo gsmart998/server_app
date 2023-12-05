@@ -19,3 +19,6 @@ class MyErrors:
 
     class FetchTodosError(Exception):
         pass
+
+    class RedisConnectionError(Exception):
+        pass

@@ -1,6 +1,5 @@
 from http.server import BaseHTTPRequestHandler
 
-from utils.cookie import MyCookie
 from http_.request import Request
 from http_.router.routes import routes
 from logs.my_logging import log
@@ -21,15 +20,13 @@ class Handlers(BaseHTTPRequestHandler):
             Request.respond(self, 404, "Wrong '/path'.")
             return
 
-        my_cookie = MyCookie()
-        my_cookie.uid, my_cookie.user_id = Request.read(self)
-        my_cookie.path = path
+        uid, user_id = Request.read(self)
 
         # get specific handler from routes list
         handler = routes.get_handler(method, path)
 
         # call this handler
-        handler(self, my_cookie)
+        handler(self, uid, user_id)
 
     def do_GET(self):
         method = "Get"

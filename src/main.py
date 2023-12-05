@@ -1,7 +1,6 @@
 from http.server import HTTPServer
 
 import settings
-from database.db_init import QueryError, init_tables
 from utils.env_validate import EnvValidate
 from http_.main_handler import Handlers
 from http_.router.routes import register_routes
@@ -10,9 +9,6 @@ from logs.my_logging import log
 
 def run_server():
     try:
-        # init tables in DB
-        init_tables()
-
         # init routes in routes.py
         register_routes()
 
@@ -29,8 +25,6 @@ def run_server():
     except (KeyboardInterrupt, EnvironmentError):
         log.error("Server shutdown...")
         server.shutdown()
-    except QueryError:
-        print("Something gone wrong while create DB tables")
 
 
 if __name__ == "__main__":
