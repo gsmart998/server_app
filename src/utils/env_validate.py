@@ -6,7 +6,7 @@ from logs.my_logging import log
 class EnvValidate():
     def host_validate(HOST, PORT):
         if 0 <= PORT <= 65535 and is_fqdn(HOST):
-            log.info("Use HOST and PORT data from .ENV file.")
+            log.info("Use HOST and PORT data from environment")
 
         else:
             # if ENV data incorrect - shutdown the server

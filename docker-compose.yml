@@ -10,11 +10,14 @@ services:
       DB_HOST: host.docker.internal
       DB_PORT: "5432"
       DATABASE: "pg_db"
+      REDIS_PORT: 6379
+      REDIS_HOST: host.docker.internal
     command: python main.py
     ports:
-      - "8081:8001"
+      - "8080:8001"
     depends_on:
       - postgres
+      - redis
   
   postgres:
     image: postgres:13.3
@@ -23,8 +26,20 @@ services:
       POSTGRES_DB: "pg_db"
       POSTGRES_USER: "admin"
       POSTGRES_PASSWORD: "password"
-      PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
       - ./db_data:/var/lib/postgresql/data
+      - ./src/database/init:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
+  
+  redis:
+    image: redis:7.2
+    restart: always
+    environment:
+      REDIS_PASSWORD: "password"
+      REDIS_DATABASES: 16
+      REDIS_PORT: 6379
+    volumes:
+      - ./db_redis:/root/redis
+    ports:
+      - "6379:6379"

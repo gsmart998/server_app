@@ -1,5 +1,8 @@
 __pycache__
 .venv
+.env
 .vscode
 db_data
 app.log
+.gitignore
+db_redis
